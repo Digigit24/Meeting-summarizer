@@ -9,7 +9,7 @@ A comprehensive Chrome extension that records Google Meet (and other meeting pla
 - **Speaker Diarization**: Identifies "who said what" using AssemblyAI
 - **Caption Scraping**: Extracts real speaker names from Google Meet captions
 - **Smart Chunking**: Handles long meetings with token-aware text chunking
-- **AI Summarization**: Generates comprehensive summaries using OpenAI GPT
+- **AI Summarization**: Generates comprehensive summaries using Google Gemini 2.5 Flash
 - **Action Items**: Automatically extracts action items and assigns owners
 - **Database Storage**: Stores meetings, transcripts, and summaries in SQLite/PostgreSQL
 - **S3 Integration**: Uploads recordings to AWS S3 (with local fallback)
@@ -20,7 +20,7 @@ A comprehensive Chrome extension that records Google Meet (and other meeting pla
 Extension (Chrome) → Backend (Node.js) → External APIs
     ↓                     ↓                    ↓
 Recording          Upload & Process      Transcribe & Summarize
-Captions           Save to DB            AssemblyAI + OpenAI
+Captions           Save to DB            AssemblyAI + Gemini
 IndexedDB          SQLite/PostgreSQL     S3 Storage
 ```
 
@@ -40,8 +40,8 @@ IndexedDB          SQLite/PostgreSQL     S3 Storage
    - **Step 2**: Transcribe with AssemblyAI (speaker diarization)
    - **Step 3**: Map AI speakers to real names from captions
    - **Step 4**: Chunk transcript using tiktoken
-   - **Step 5**: Summarize each chunk with GPT-3.5-turbo-16k
-   - **Step 6**: Create final summary with GPT-4o-mini
+   - **Step 5**: Summarize each chunk with Gemini 2.5 Flash
+   - **Step 6**: Create final summary with Gemini 2.5 Flash
    - **Step 7**: Extract action items and key points
    - **Step 8**: Save everything to database
 
@@ -59,8 +59,8 @@ IndexedDB          SQLite/PostgreSQL     S3 Storage
 - **SQLite/PostgreSQL** + **Prisma ORM** (database)
 - **AWS S3** (audio storage)
 - **AssemblyAI** (transcription + speaker diarization)
-- **OpenAI GPT** (summarization)
-- **tiktoken** (token counting)
+- **Google Gemini 2.5 Flash** (AI summarization)
+- **tiktoken** (token counting for chunking)
 
 ## 📦 Installation
 
@@ -132,14 +132,14 @@ AWS_SECRET_ACCESS_KEY=your-secret-key-here
 # AssemblyAI (Required for transcription with speaker diarization)
 ASSEMBLYAI_API_KEY=your-assemblyai-api-key-here
 
-# OpenAI (Required for summarization)
-OPENAI_API_KEY=your-openai-api-key-here
+# Google Gemini (Required for AI summarization with Gemini 2.5 Flash)
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 ### Getting API Keys
 
 1. **AssemblyAI**: Sign up at https://www.assemblyai.com/ (Free tier: 3 hours/month)
-2. **OpenAI**: Get API key from https://platform.openai.com/
+2. **Google Gemini**: Get API key from https://aistudio.google.com/app/apikey (Free tier available)
 3. **AWS S3** (Optional): Create bucket and IAM user at https://aws.amazon.com/
 
 ## 🎯 Usage
@@ -236,7 +236,7 @@ Long meetings handled via **map-reduce chunking**:
 
 ## ⚠️ Important
 
-1. **API Costs**: Monitor AssemblyAI and OpenAI usage
+1. **API Costs**: AssemblyAI charges per usage. Gemini has generous free tier.
 2. **Privacy**: Audio uploaded to external services
 3. **Accuracy**: AI transcription ~95% accurate
 4. **Storage**: Configure S3 or use local storage

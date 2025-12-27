@@ -1,13 +1,10 @@
 import { encoding_for_model } from "tiktoken";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const GEMINI_MODEL = "gemini-2.0-flash-exp"; // Gemini 2.5 Flash when available
 
-const MAX_CHUNK_TOKENS = 3000; // Safe limit for GPT-3.5-turbo input
-const MODEL = "gpt-3.5-turbo-16k"; // Larger context window
-const FINAL_MODEL = "gpt-4o-mini"; // Better quality for final summary
+const MAX_CHUNK_TOKENS = 4000; // Gemini has larger context window (~1M tokens, but we chunk for better summaries)
 
 /**
  * Summarizes a long meeting transcript using map-reduce chunking
@@ -97,30 +94,26 @@ function chunkTranscriptByTokens(text, maxTokens) {
 }
 
 /**
- * Summarizes a single chunk of the transcript
+ * Summarizes a single chunk of the transcript using Gemini
  */
 async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
   try {
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: `You are summarizing a segment (part ${chunkIndex} of ${totalChunks}) of a meeting transcript.
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+    const prompt = `You are summarizing a segment (part ${chunkIndex} of ${totalChunks}) of a meeting transcript.
+
 Extract key discussion points, decisions made, and any action items mentioned.
 Preserve important details like who said what for critical decisions.
-Be concise but comprehensive.`,
-        },
-        {
-          role: "user",
-          content: chunkText,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 800,
-    });
+Be concise but comprehensive.
 
-    return response.choices[0].message.content;
+Transcript segment:
+${chunkText}
+
+Provide a clear, structured summary of this segment.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error(`[Summarization] Error summarizing chunk ${chunkIndex}:`, error.message);
     return `[Error summarizing chunk ${chunkIndex}]`;
@@ -128,18 +121,20 @@ Be concise but comprehensive.`,
 }
 
 /**
- * Creates final comprehensive summary from chunk summaries
+ * Creates final comprehensive summary from chunk summaries using Gemini
  */
 async function createFinalSummary(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n---\n\n");
 
   try {
-    const response = await openai.chat.completions.create({
-      model: FINAL_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: `You are creating a comprehensive meeting summary from segment summaries.
+    const model = genAI.getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: {
+        temperature: 0.3,
+      }
+    });
+
+    const prompt = `You are creating a comprehensive meeting summary from segment summaries.
 
 Create a well-structured summary with:
 1. **Overview**: Brief meeting context and main topic
@@ -148,18 +143,15 @@ Create a well-structured summary with:
 4. **Action Items**: Tasks and next steps (if mentioned)
 5. **Next Steps**: What happens next
 
-Be clear, concise, and professional. Use bullet points for readability.`,
-        },
-        {
-          role: "user",
-          content: `Here are the segment summaries:\n\n${combinedSummaries}`,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 1500,
-    });
+Be clear, concise, and professional. Use bullet points for readability.
 
-    return response.choices[0].message.content;
+Here are the segment summaries:
+
+${combinedSummaries}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error("[Summarization] Error creating final summary:", error.message);
     // Fallback: concatenate chunk summaries
@@ -168,33 +160,32 @@ Be clear, concise, and professional. Use bullet points for readability.`,
 }
 
 /**
- * Extracts action items from summaries
+ * Extracts action items from summaries using Gemini
  */
 async function extractActionItems(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n");
 
   try {
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: `Extract all action items from the meeting summaries.
+    const model = genAI.getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: {
+        temperature: 0.2,
+      }
+    });
+
+    const prompt = `Extract all action items from the meeting summaries.
 Format each action item as:
 - [Action item description] (Owner: [name if mentioned, else "Unassigned"])
 
-Return only the bullet list, no extra text.`,
-        },
-        {
-          role: "user",
-          content: combinedSummaries,
-        },
-      ],
-      temperature: 0.2,
-      max_tokens: 500,
-    });
+Return only the bullet list, no extra text.
 
-    const actionItemsText = response.choices[0].message.content;
+Summaries:
+${combinedSummaries}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const actionItemsText = response.text();
+
     // Parse into array
     return actionItemsText
       .split("\n")

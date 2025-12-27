@@ -99,9 +99,9 @@ export const startProcessing = async (
       keyPoints: [],
     };
 
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "your-openai-api-key-here") {
+    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "your-gemini-api-key-here") {
       try {
-        console.log("\n[Orchestrator] Step 2: Summarizing with OpenAI...");
+        console.log("\n[Orchestrator] Step 2: Summarizing with Gemini 2.5 Flash...");
         summaryResult = await summarizeMeeting(fullTranscript, speakerSegments);
         console.log(`[Orchestrator] ✓ Summarization completed`);
         console.log(`[Orchestrator]   - Summary length: ${summaryResult.summary.length} chars`);
@@ -112,7 +112,7 @@ export const startProcessing = async (
         summaryResult.summary = `Summarization error: ${sumError.message}`;
       }
     } else {
-      console.log("[Orchestrator] OpenAI API key not configured. Skipping summarization.");
+      console.log("[Orchestrator] Gemini API key not configured. Skipping summarization.");
     }
 
     // STEP 3: Save Speaker Segments to Database

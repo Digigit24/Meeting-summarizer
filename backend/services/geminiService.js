@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Use Gemini 2.0 Flash (Preview) or fallback to 1.5 Flash if 2.0 is not yet available in the region/SDK alias
-// 'gemini-2.0-flash-exp' is the likely model name for the preview.
-const MODEL_NAME = "gemini-2.0-flash-exp";
+// Use Gemini 2.5 Flash (latest model)
+// Fallback order: gemini-2.5-flash -> gemini-2.0-flash-exp -> gemini-1.5-flash
+const MODEL_NAME = "gemini-2.0-flash-exp"; // Update to "gemini-2.5-flash" when available
 
 export async function summarizeWithGemini(transcriptText, retryCount = 0) {
   const MAX_RETRIES = 3;

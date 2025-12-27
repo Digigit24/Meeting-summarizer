@@ -54,7 +54,7 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ MeetSync Backend Running on http://localhost:${PORT}`);
   console.log(`✅ API Key configured: ${process.env.API_SECRET_KEY ? "Yes" : "No"}`);
-  console.log(`✅ OpenAI Key configured: ${process.env.OPENAI_API_KEY ? "Yes" : "No"}`);
+  console.log(`✅ Gemini API Key configured: ${process.env.GEMINI_API_KEY ? "Yes" : "No"}`);
   console.log(`✅ AssemblyAI Key configured: ${process.env.ASSEMBLYAI_API_KEY ? "Yes" : "No"}`);
   console.log(`✅ AWS configured: ${process.env.AWS_ACCESS_KEY_ID ? "Yes" : "No (using local fallback)"}`);
 });
