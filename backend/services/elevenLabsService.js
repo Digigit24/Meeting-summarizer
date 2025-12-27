@@ -19,8 +19,9 @@ export async function transcribeWithElevenLabs(audioFilePath) {
     }
 
     // Create form data with audio file
+    // ElevenLabs expects parameter name "file" not "audio"
     const formData = new FormData();
-    formData.append("audio", fs.createReadStream(audioFilePath));
+    formData.append("file", fs.createReadStream(audioFilePath));
 
     // Optional parameters for better transcription
     formData.append("model_id", "eleven_multilingual_v2"); // Supports multiple languages
