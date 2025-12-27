@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { transcribeWithSpeakers, mapSpeakersToRealNames } from "../services/assemblyaiService.js";
+import { transcribeWithElevenLabs, combineTranscriptWithCaptions } from "../services/elevenLabsService.js";
 import { summarizeMeeting } from "../services/summarizationService.js";
 import fs from "fs";
 
@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 /**
  * Main orchestrator for processing meeting recordings
- * Pipeline: Audio Upload -> Transcription (AssemblyAI) -> Summarization (OpenAI) -> Save to DB
+ * Pipeline: Audio Upload -> Transcription (ElevenLabs) -> Summarization (Gemini) -> Save to DB
  */
 export const startProcessing = async (
   meetingId,
@@ -25,40 +25,39 @@ export const startProcessing = async (
     let speakerSegments = [];
     let transcriptSource = "none";
 
-    // STEP 1: Transcription with Speaker Diarization
-    if (process.env.ASSEMBLYAI_API_KEY && process.env.ASSEMBLYAI_API_KEY !== "your-assemblyai-api-key-here") {
+    // STEP 1: Transcription with ElevenLabs Speech-to-Text
+    if (process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_API_KEY !== "your-elevenlabs-api-key-here") {
       try {
-        console.log("[Orchestrator] Step 1: Transcribing with AssemblyAI...");
-        const aiResult = await transcribeWithSpeakers(filePath);
+        console.log("[Orchestrator] Step 1: Transcribing with ElevenLabs...");
+        const elevenLabsResult = await transcribeWithElevenLabs(filePath);
 
-        speakerSegments = aiResult.segments || [];
-        fullTranscript = aiResult.fullText || "";
-        transcriptSource = "assemblyai";
+        console.log(`[Orchestrator] ✓ ElevenLabs transcription completed`);
+        console.log(`[Orchestrator]   - Language: ${elevenLabsResult.language}`);
+        console.log(`[Orchestrator]   - Words: ${elevenLabsResult.words}`);
 
-        // Optional: Map AI speaker labels to real names if we have caption data
-        if (clientTranscript.length > 0 && speakerSegments.length > 0) {
-          console.log("[Orchestrator] Mapping AI speakers to real names...");
-          const speakerMap = mapSpeakersToRealNames(speakerSegments, clientTranscript);
+        // Combine with caption data for speaker identification
+        if (clientTranscript.length > 0) {
+          console.log("[Orchestrator] Combining ElevenLabs transcript with caption data...");
+          const combined = combineTranscriptWithCaptions(elevenLabsResult.fullText, clientTranscript);
 
-          // Apply mapping
-          speakerSegments = speakerSegments.map(seg => ({
-            ...seg,
-            speaker: speakerMap[seg.speakerLabel] || seg.speaker,
-          }));
+          fullTranscript = combined.fullText;
+          speakerSegments = combined.segments;
+          transcriptSource = combined.transcriptSource;
 
-          // Regenerate full transcript with real names
-          fullTranscript = speakerSegments.map(s => `${s.speaker}: ${s.text}`).join("\n");
+          console.log(`[Orchestrator] ✓ Combined with ${speakerSegments.length} speaker segments`);
+        } else {
+          // No caption data, use plain ElevenLabs transcript
+          fullTranscript = elevenLabsResult.fullText;
+          speakerSegments = [];
+          transcriptSource = "elevenlabs_only";
+          console.log("[Orchestrator] ⚠️  No caption data available for speaker identification");
         }
-
-        console.log(`[Orchestrator] ✓ AssemblyAI transcription completed`);
-        console.log(`[Orchestrator]   - Segments: ${speakerSegments.length}`);
-        console.log(`[Orchestrator]   - Duration: ${aiResult.duration}ms`);
-      } catch (aiError) {
-        console.error("[Orchestrator] AssemblyAI transcription failed:", aiError.message);
+      } catch (elevenLabsError) {
+        console.error("[Orchestrator] ElevenLabs transcription failed:", elevenLabsError.message);
         console.log("[Orchestrator] Falling back to client transcript...");
       }
     } else {
-      console.log("[Orchestrator] AssemblyAI API key not configured. Skipping AI transcription.");
+      console.log("[Orchestrator] ElevenLabs API key not configured. Skipping AI transcription.");
     }
 
     // STEP 1B: Fallback to Client Transcript (from scraped captions)

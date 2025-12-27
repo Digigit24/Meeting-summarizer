@@ -6,7 +6,7 @@ A comprehensive Chrome extension that records Google Meet (and other meeting pla
 
 - **Multi-Platform Recording**: Records Google Meet, Zoom, and Microsoft Teams
 - **Audio Capture**: Captures both system audio (meeting) and microphone input
-- **Speaker Diarization**: Identifies "who said what" using AssemblyAI
+- **Speech-to-Text**: High-quality transcription using ElevenLabs API
 - **Caption Scraping**: Extracts real speaker names from Google Meet captions
 - **Smart Chunking**: Handles long meetings with token-aware text chunking
 - **AI Summarization**: Generates comprehensive summaries using Google Gemini 2.5 Flash
@@ -20,7 +20,7 @@ A comprehensive Chrome extension that records Google Meet (and other meeting pla
 Extension (Chrome) → Backend (Node.js) → External APIs
     ↓                     ↓                    ↓
 Recording          Upload & Process      Transcribe & Summarize
-Captions           Save to DB            AssemblyAI + Gemini
+Captions           Save to DB            ElevenLabs + Gemini
 IndexedDB          SQLite/PostgreSQL     S3 Storage
 ```
 
@@ -37,8 +37,8 @@ IndexedDB          SQLite/PostgreSQL     S3 Storage
 
 3. **Processing Phase** (Backend):
    - **Step 1**: Upload audio to S3 (or local fallback)
-   - **Step 2**: Transcribe with AssemblyAI (speaker diarization)
-   - **Step 3**: Map AI speakers to real names from captions
+   - **Step 2**: Transcribe with ElevenLabs Speech-to-Text
+   - **Step 3**: Combine transcript with caption data for speaker identification
    - **Step 4**: Chunk transcript using tiktoken
    - **Step 5**: Summarize each chunk with Gemini 2.5 Flash
    - **Step 6**: Create final summary with Gemini 2.5 Flash
@@ -58,7 +58,7 @@ IndexedDB          SQLite/PostgreSQL     S3 Storage
 - **Node.js** + **Express** (server)
 - **SQLite/PostgreSQL** + **Prisma ORM** (database)
 - **AWS S3** (audio storage)
-- **AssemblyAI** (transcription + speaker diarization)
+- **ElevenLabs** (Speech-to-Text transcription)
 - **Google Gemini 2.5 Flash** (AI summarization)
 - **tiktoken** (token counting for chunking)
 
@@ -129,8 +129,8 @@ AWS_BUCKET_NAME=your-bucket-name
 AWS_ACCESS_KEY_ID=your-access-key-here
 AWS_SECRET_ACCESS_KEY=your-secret-key-here
 
-# AssemblyAI (Required for transcription with speaker diarization)
-ASSEMBLYAI_API_KEY=your-assemblyai-api-key-here
+# ElevenLabs (Required for Speech-to-Text transcription)
+ELEVENLABS_API_KEY=your-elevenlabs-api-key-here
 
 # Google Gemini (Required for AI summarization with Gemini 2.5 Flash)
 GEMINI_API_KEY=your-gemini-api-key-here
@@ -138,7 +138,7 @@ GEMINI_API_KEY=your-gemini-api-key-here
 
 ### Getting API Keys
 
-1. **AssemblyAI**: Sign up at https://www.assemblyai.com/ (Free tier: 3 hours/month)
+1. **ElevenLabs**: Sign up at https://elevenlabs.io/ and get API key from https://elevenlabs.io/app/speech-synthesis
 2. **Google Gemini**: Get API key from https://aistudio.google.com/app/apikey (Free tier available)
 3. **AWS S3** (Optional): Create bucket and IAM user at https://aws.amazon.com/
 
@@ -221,10 +221,11 @@ curl http://localhost:3001/api/meetings/{meeting-id}
 
 ### Speaker Identification
 
-Uses **hybrid approach** for best accuracy:
-1. AssemblyAI provides speaker diarization (A, B, C)
-2. Extension scrapes Google Meet captions (real names)
-3. Backend maps AI labels to real names via timestamps
+Uses **caption-based approach** for speaker tracking:
+1. ElevenLabs provides high-quality speech-to-text transcription
+2. Extension scrapes Google Meet captions (real names + timestamps)
+3. Backend combines ElevenLabs transcript with caption data for "who said what"
+4. Fallback: If no captions available, uses plain transcript without speakers
 
 ### Token Management
 
@@ -236,10 +237,11 @@ Long meetings handled via **map-reduce chunking**:
 
 ## ⚠️ Important
 
-1. **API Costs**: AssemblyAI charges per usage. Gemini has generous free tier.
-2. **Privacy**: Audio uploaded to external services
-3. **Accuracy**: AI transcription ~95% accurate
+1. **API Costs**: ElevenLabs offers free credits on signup. Gemini has generous free tier.
+2. **Privacy**: Audio uploaded to external services (ElevenLabs, AWS S3)
+3. **Accuracy**: ElevenLabs transcription is highly accurate (~99% for clear audio)
 4. **Storage**: Configure S3 or use local storage
+5. **Speaker Tracking**: Enable Google Meet captions for best "who said what" tracking
 
 ## 📄 License
 
