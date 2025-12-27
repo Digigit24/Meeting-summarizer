@@ -26,6 +26,17 @@
     "service_worker": "src/background/background.js",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://*.zoom.us/*",
+        "https://teams.microsoft.com/*"
+      ],
+      "js": ["src/content/platformDetect.js", "src/content/scraper.js"],
+      "run_at": "document_end"
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": ["offscreen.html"],

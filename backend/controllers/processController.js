@@ -1,96 +1,174 @@
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3"; // If we need to fetch from S3
 import { PrismaClient } from "@prisma/client";
-import { summarizeWithGemini } from "../services/geminiService.js";
+import { transcribeWithSpeakers, mapSpeakersToRealNames } from "../services/assemblyaiService.js";
+import { summarizeMeeting } from "../services/summarizationService.js";
 import fs from "fs";
-import axios from "axios";
-import FormData from "form-data";
-
-// Reuse the ElevenLabs/transcription logic from previous aiService,
-// likely moved here or we import it.
-// For clarity I will include the transcription stub here or minimal version.
 
 const prisma = new PrismaClient();
 
-// -- Helper: Transcription (Stub/Mock from previous turn) --
-async function transcribeAudioScribe(filePath) {
-  // Real implementation would call ElevenLabs
-  if (!process.env.ELEVENLABS_API_KEY) {
-    return {
-      text: "User did not provide API Key. This is a mock transcript where Alice discusses backend architecture and Bob agrees to use Gemini 2.0 Flash. Alice assigns Bob to install the SDK.",
-      segments: [], // Mock segments
-    };
-  }
-  // ... Implement actual call if key exists ...
-  return {
-    text: "Mock transcript placeholder for specific implementation.",
-    segments: [],
-  };
-}
-
-// -- Main Orchestrator --
+/**
+ * Main orchestrator for processing meeting recordings
+ * Pipeline: Audio Upload -> Transcription (AssemblyAI) -> Summarization (OpenAI) -> Save to DB
+ */
 export const startProcessing = async (
   meetingId,
   filePath,
   clientTranscript = []
 ) => {
   try {
-    console.log(`[Orchestrator] Starting pipeline for ${meetingId}`);
+    console.log(`\n========================================`);
+    console.log(`[Orchestrator] Starting pipeline for meeting: ${meetingId}`);
+    console.log(`[Orchestrator] Audio file: ${filePath}`);
+    console.log(`[Orchestrator] Client transcript entries: ${clientTranscript.length}`);
+    console.log(`========================================\n`);
 
-    // 1. Transcribe (ElevenLabs)
-    const transcriptionResult = await transcribeAudioScribe(filePath);
+    let fullTranscript = "";
+    let speakerSegments = [];
+    let transcriptSource = "none";
 
-    // Strategy: Merge or Prefer?
-    // If ElevenLabs works, it usually has better timings.
-    // If clientTranscript (scraped) is available, it has better Speakers (Real names).
-    // For this MVP, we will concat them or just use ElevenLabs if available, falling back to scraped.
+    // STEP 1: Transcription with Speaker Diarization
+    if (process.env.ASSEMBLYAI_API_KEY && process.env.ASSEMBLYAI_API_KEY !== "your-assemblyai-api-key-here") {
+      try {
+        console.log("[Orchestrator] Step 1: Transcribing with AssemblyAI...");
+        const aiResult = await transcribeWithSpeakers(filePath);
 
-    let fullTranscript = transcriptionResult.text;
+        speakerSegments = aiResult.segments || [];
+        fullTranscript = aiResult.fullText || "";
+        transcriptSource = "assemblyai";
 
-    // If ElevenLabs returned placeholder/mock/empty and we have client transcript:
-    if (
-      (!fullTranscript || fullTranscript.includes("Mock")) &&
-      clientTranscript.length > 0
-    ) {
-      console.log("[Orchestrator] Using Client Transcript as primary source.");
-      // Format: Speaker: Text
+        // Optional: Map AI speaker labels to real names if we have caption data
+        if (clientTranscript.length > 0 && speakerSegments.length > 0) {
+          console.log("[Orchestrator] Mapping AI speakers to real names...");
+          const speakerMap = mapSpeakersToRealNames(speakerSegments, clientTranscript);
+
+          // Apply mapping
+          speakerSegments = speakerSegments.map(seg => ({
+            ...seg,
+            speaker: speakerMap[seg.speakerLabel] || seg.speaker,
+          }));
+
+          // Regenerate full transcript with real names
+          fullTranscript = speakerSegments.map(s => `${s.speaker}: ${s.text}`).join("\n");
+        }
+
+        console.log(`[Orchestrator] ✓ AssemblyAI transcription completed`);
+        console.log(`[Orchestrator]   - Segments: ${speakerSegments.length}`);
+        console.log(`[Orchestrator]   - Duration: ${aiResult.duration}ms`);
+      } catch (aiError) {
+        console.error("[Orchestrator] AssemblyAI transcription failed:", aiError.message);
+        console.log("[Orchestrator] Falling back to client transcript...");
+      }
+    } else {
+      console.log("[Orchestrator] AssemblyAI API key not configured. Skipping AI transcription.");
+    }
+
+    // STEP 1B: Fallback to Client Transcript (from scraped captions)
+    if (!fullTranscript && clientTranscript.length > 0) {
+      console.log("[Orchestrator] Using client-scraped transcript as primary source");
       fullTranscript = clientTranscript
         .map((t) => `${t.speaker}: ${t.text}`)
         .join("\n");
-    } else if (clientTranscript.length > 0) {
-      // Append context for Gemini
-      console.log(
-        "[Orchestrator] Merging/Appending Client Transcript for context."
-      );
-      fullTranscript =
-        `Audio Transcript:\n${fullTranscript}\n\nClient Scraped Log:\n` +
-        clientTranscript.map((t) => `${t.speaker}: ${t.text}`).join("\n");
+      transcriptSource = "client_captions";
+
+      // Convert to segments format
+      speakerSegments = clientTranscript.map(t => ({
+        speaker: t.speaker,
+        text: t.text,
+        startTime: t.timestamp,
+      }));
     }
 
-    // 2. Summarize (Gemini 2.0 Flash)
-    console.log(
-      `[Orchestrator] Sending ${fullTranscript.length} chars to Gemini...`
-    );
-    const geminiResult = await summarizeWithGemini(fullTranscript);
+    if (!fullTranscript) {
+      console.log("[Orchestrator] ⚠️  No transcript available. Saving meeting without processing.");
+      await prisma.meeting.update({
+        where: { id: meetingId },
+        data: {
+          raw_transcript: "No transcript available",
+          summary: "Processing failed: No transcript could be generated",
+        },
+      });
+      return;
+    }
 
-    // 3. Save to DB
+    console.log(`[Orchestrator] Transcript ready (source: ${transcriptSource})`);
+    console.log(`[Orchestrator] Length: ${fullTranscript.length} chars, ${fullTranscript.split("\n").length} lines`);
+
+    // STEP 2: Summarization with Chunking
+    let summaryResult = {
+      summary: "Summarization skipped (no API key)",
+      actionItems: [],
+      keyPoints: [],
+    };
+
+    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "your-openai-api-key-here") {
+      try {
+        console.log("\n[Orchestrator] Step 2: Summarizing with OpenAI...");
+        summaryResult = await summarizeMeeting(fullTranscript, speakerSegments);
+        console.log(`[Orchestrator] ✓ Summarization completed`);
+        console.log(`[Orchestrator]   - Summary length: ${summaryResult.summary.length} chars`);
+        console.log(`[Orchestrator]   - Action items: ${summaryResult.actionItems.length}`);
+        console.log(`[Orchestrator]   - Key points: ${summaryResult.keyPoints.length}`);
+      } catch (sumError) {
+        console.error("[Orchestrator] Summarization failed:", sumError.message);
+        summaryResult.summary = `Summarization error: ${sumError.message}`;
+      }
+    } else {
+      console.log("[Orchestrator] OpenAI API key not configured. Skipping summarization.");
+    }
+
+    // STEP 3: Save Speaker Segments to Database
+    console.log("\n[Orchestrator] Step 3: Saving to database...");
+
+    // Save speaker segments
+    if (speakerSegments.length > 0) {
+      for (const segment of speakerSegments) {
+        await prisma.speakerSegment.create({
+          data: {
+            meeting_id: meetingId,
+            speaker_name: segment.speaker,
+            text: segment.text,
+            timestamp: new Date(segment.startTime || Date.now()),
+          },
+        });
+      }
+      console.log(`[Orchestrator] ✓ Saved ${speakerSegments.length} speaker segments`);
+    }
+
+    // Update meeting record
     await prisma.meeting.update({
       where: { id: meetingId },
       data: {
         raw_transcript: fullTranscript,
-        summary: JSON.stringify(geminiResult), // Save the whole JSON object for frontend to parse
-        action_items: JSON.stringify(geminiResult.action_items || []),
-        sentiment:
-          geminiResult.overall_sentiment || geminiResult.sentiment || "Neutral",
+        summary: summaryResult.summary,
+        action_items: JSON.stringify(summaryResult.actionItems),
+        sentiment: "Neutral", // Can be enhanced with sentiment analysis
       },
     });
 
-    // 4. Cleanup
+    console.log(`[Orchestrator] ✓ Meeting record updated`);
+
+    // STEP 4: Cleanup temporary audio file
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      console.log(`[Orchestrator] ✓ Cleaned up temp file: ${filePath}`);
     }
-    console.log(`[Orchestrator] Pipeline finished for ${meetingId}`);
+
+    console.log(`\n========================================`);
+    console.log(`[Orchestrator] ✅ Pipeline completed for ${meetingId}`);
+    console.log(`========================================\n`);
   } catch (error) {
-    console.error(`[Orchestrator] Failed for ${meetingId}:`, error);
-    // Could update DB status to 'FAILED'
+    console.error(`\n[Orchestrator] ❌ Pipeline failed for ${meetingId}:`, error);
+    console.error("Stack trace:", error.stack);
+
+    // Update meeting status to failed
+    try {
+      await prisma.meeting.update({
+        where: { id: meetingId },
+        data: {
+          summary: `Processing failed: ${error.message}`,
+        },
+      });
+    } catch (dbError) {
+      console.error("[Orchestrator] Failed to update meeting status:", dbError);
+    }
   }
 };
