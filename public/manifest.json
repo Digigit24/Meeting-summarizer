@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "MeetSync AI Extension",
+  "version": "1.0.0",
+  "description": "Records meeting audio and extracts speaker info with AI summarization.",
+  "permissions": [
+    "tabCapture",
+    "storage",
+    "scripting",
+    "offscreen",
+    "activeTab",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://*.zoom.us/*",
+    "https://teams.microsoft.com/*",
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "http://127.0.0.1:3001/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "src/background/background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

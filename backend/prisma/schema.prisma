@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Meeting {
+  id            String   @id @default(uuid())
+  name          String?
+  s3_url        String
+  raw_transcript String?
+  summary       String?
+  action_items  String?    // Stored as JSON string for SQLite compatibility
+  sentiment     String?  // Added for sentiment analysis result
+  duration      Int?
+  created_at    DateTime @default(now())
+  
+  segments      SpeakerSegment[]
+}
+
+model SpeakerSegment {
+  id           String   @id @default(uuid())
+  meeting_id   String
+  meeting      Meeting  @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+  speaker_name String
+  text         String
+  timestamp    DateTime
+}
