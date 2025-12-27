@@ -23,8 +23,9 @@ export async function transcribeWithElevenLabs(audioFilePath) {
     const formData = new FormData();
     formData.append("file", fs.createReadStream(audioFilePath));
 
-    // Optional parameters for better transcription
-    formData.append("model_id", "eleven_multilingual_v2"); // Supports multiple languages
+    // Use the latest speech-to-text model
+    // Valid models: 'scribe_v1', 'scribe_v1_experimental', 'scribe_v2'
+    formData.append("model_id", "scribe_v2");
 
     // Make API request
     const response = await axios.post(ELEVENLABS_API_URL, formData, {
