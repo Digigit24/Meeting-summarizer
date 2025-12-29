@@ -96,12 +96,21 @@ export const startProcessing = async (
 
             console.log(`[Orchestrator]   - Combined ${combined.segments.length} speaker segments`);
           } else {
-            fullTranscript = elevenLabsResult.fullText;
-            // Use diarized segments if available from ElevenLabs
+            // Use diarized segments from ElevenLabs
             speakerSegments = elevenLabsResult.segments || [];
-            transcriptSource = "elevenlabs_only";
+            transcriptSource = "elevenlabs_diarization";
 
-            console.log("[Orchestrator] No client captions available, using ElevenLabs transcript only");
+            // Format transcript with speaker labels
+            if (speakerSegments.length > 0) {
+              fullTranscript = speakerSegments
+                .map(seg => `Speaker ${seg.speaker}: ${seg.text}`)
+                .join('\n');
+              console.log(`[Orchestrator] Formatted transcript with ${speakerSegments.length} speaker segments from ElevenLabs`);
+            } else {
+              // Fallback to plain text if no segments
+              fullTranscript = elevenLabsResult.fullText;
+              console.log("[Orchestrator] No ElevenLabs segments, using plain transcript");
+            }
           }
           elevenLabsSuccess = true;
 

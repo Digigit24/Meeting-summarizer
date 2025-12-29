@@ -44,7 +44,7 @@ export const uploadMeeting = async (req, res) => {
       s3Url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
     } catch (s3Error) {
       console.warn("S3 Upload Failed. Using local fallback.", s3Error.message);
-      s3Url = `http://localhost:${process.env.PORT || 3000}/uploads/${
+      s3Url = `http://127.0.0.1:${process.env.PORT || 3001}/uploads/${
         file.filename
       }`;
     }

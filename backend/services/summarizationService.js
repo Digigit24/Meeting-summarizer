@@ -2,9 +2,10 @@ import { encoding_for_model } from "tiktoken";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const GEMINI_MODEL = "gemini-2.0-flash-exp"; // Using Gemini 2.0 Flash for summarization
+// Use gemini-1.5-flash for free tier (reliable and widely available)
+const GEMINI_MODEL = "gemini-1.5-flash";
 
-const MAX_CHUNK_TOKENS = 4000; // Gemini has larger context window (~1M tokens, but we chunk for better summaries)
+const MAX_CHUNK_TOKENS = 4000; // Chunk size for better summaries
 
 /**
  * Summarizes a long meeting transcript using map-reduce chunking
@@ -61,21 +62,28 @@ export async function summarizeMeeting(transcript, segments = []) {
  * Chunks transcript by token count to stay under model limits
  */
 function chunkTranscriptByTokens(text, maxTokens) {
+  console.log(`[Tokenization] Starting tokenization with max ${maxTokens} tokens per chunk`);
+
   const encoder = encoding_for_model("gpt-3.5-turbo");
   const lines = text.split("\n");
   const chunks = [];
   let currentChunk = [];
   let currentTokens = 0;
 
+  console.log(`[Tokenization] Processing ${lines.length} lines`);
+
   for (const line of lines) {
+    if (!line.trim()) continue; // Skip empty lines
+
     const lineTokens = encoder.encode(line);
     const lineTokenCount = lineTokens.length;
 
-    if (currentTokens + lineTokenCount > maxTokens) {
+    if (currentTokens + lineTokenCount > maxTokens && currentChunk.length > 0) {
       // Save current chunk and start new one
-      if (currentChunk.length > 0) {
-        chunks.push(currentChunk.join("\n"));
-      }
+      const chunkText = currentChunk.join("\n");
+      chunks.push(chunkText);
+      console.log(`[Tokenization] Created chunk ${chunks.length}: ${currentTokens} tokens, ${currentChunk.length} lines`);
+
       currentChunk = [line];
       currentTokens = lineTokenCount;
     } else {
@@ -86,21 +94,35 @@ function chunkTranscriptByTokens(text, maxTokens) {
 
   // Add remaining chunk
   if (currentChunk.length > 0) {
-    chunks.push(currentChunk.join("\n"));
+    const chunkText = currentChunk.join("\n");
+    chunks.push(chunkText);
+    console.log(`[Tokenization] Created final chunk ${chunks.length}: ${currentTokens} tokens, ${currentChunk.length} lines`);
   }
 
   encoder.free();
+
+  console.log(`[Tokenization] Total chunks created: ${chunks.length}`);
   return chunks;
 }
 
 /**
- * Summarizes a single chunk of the transcript using Gemini
+ * Summarizes a single chunk of the transcript using Gemini with retry logic
  */
 async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
-  try {
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+  const maxRetries = 3;
+  let lastError;
 
-    const prompt = `You are summarizing a segment (part ${chunkIndex} of ${totalChunks}) of a meeting transcript.
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        generationConfig: {
+          temperature: 0.5,
+          maxOutputTokens: 1024,
+        }
+      });
+
+      const prompt = `You are summarizing a segment (part ${chunkIndex} of ${totalChunks}) of a meeting transcript.
 
 Extract key discussion points, decisions made, and any action items mentioned.
 Preserve important details like who said what for critical decisions.
@@ -111,13 +133,29 @@ ${chunkText}
 
 Provide a clear, structured summary of this segment.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
-  } catch (error) {
-    console.error(`[Summarization] Error summarizing chunk ${chunkIndex}:`, error.message);
-    return `[Error summarizing chunk ${chunkIndex}]`;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      lastError = error;
+      console.error(`[Summarization] Error summarizing chunk ${chunkIndex} (attempt ${attempt}/${maxRetries}):`, error.message);
+
+      // If quota exceeded, wait before retrying
+      if (error.message.includes('quota') || error.message.includes('429')) {
+        if (attempt < maxRetries) {
+          const waitTime = Math.min(5000 * attempt, 30000); // Wait 5s, 10s, 15s
+          console.log(`[Summarization] Quota exceeded, waiting ${waitTime/1000}s before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      } else {
+        // For other errors, don't retry
+        break;
+      }
+    }
   }
+
+  console.error(`[Summarization] Failed to summarize chunk ${chunkIndex} after ${maxRetries} attempts`);
+  return `[Unable to summarize this segment due to API limitations]`;
 }
 
 /**

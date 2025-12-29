@@ -48,7 +48,14 @@ app.use((req, res, next) => {
 app.use("/admin", express.static("public"));
 
 app.use("/api", meetingRoutes);
-app.use("/uploads", express.static("uploads")); // Serve local audio files if S3 fails
+
+// Serve local audio files with proper headers for playback
+app.use("/uploads", (req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  next();
+}, express.static("uploads"));
 
 app.get("/", (req, res) => {
   res.send("MeetSync Backend Running - Visit /admin/admin.html for the dashboard");

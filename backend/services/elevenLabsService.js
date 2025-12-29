@@ -74,12 +74,18 @@ export async function transcribeWithElevenLabs(audioFilePath) {
     let segments = [];
     if (response.words && Array.isArray(response.words)) {
       console.log(`[ElevenLabs] Processing ${response.words.length} diarized words into segments`);
-      segments = response.words.map((w) => ({
+
+      // Group words by speaker to create speaker segments
+      const wordSegments = response.words.map((w) => ({
         text: w.text,
         startTime: w.start,
         endTime: w.end,
         speaker: w.speaker_id || "Unknown",
       }));
+
+      // Merge consecutive words from the same speaker into segments
+      segments = mergeWordsIntoSegments(wordSegments);
+      console.log(`[ElevenLabs] Created ${segments.length} speaker segments from words`);
     } else {
       console.log("[ElevenLabs] No diarization data in response");
     }
@@ -115,6 +121,47 @@ export async function transcribeWithElevenLabs(audioFilePath) {
 
     throw new Error(`ElevenLabs API error: ${errorMessage}`);
   }
+}
+
+/**
+ * Merges consecutive words from the same speaker into segments
+ * @param {Array} wordSegments - Array of word-level segments with speaker IDs
+ * @returns {Array} - Merged speaker segments
+ */
+function mergeWordsIntoSegments(wordSegments) {
+  if (!wordSegments || wordSegments.length === 0) return [];
+
+  const merged = [];
+  let currentSegment = {
+    speaker: wordSegments[0].speaker,
+    text: wordSegments[0].text,
+    startTime: wordSegments[0].startTime,
+    endTime: wordSegments[0].endTime,
+  };
+
+  for (let i = 1; i < wordSegments.length; i++) {
+    const word = wordSegments[i];
+
+    // If same speaker, append to current segment
+    if (word.speaker === currentSegment.speaker) {
+      currentSegment.text += ' ' + word.text;
+      currentSegment.endTime = word.endTime;
+    } else {
+      // Different speaker, save current and start new
+      merged.push({ ...currentSegment });
+      currentSegment = {
+        speaker: word.speaker,
+        text: word.text,
+        startTime: word.startTime,
+        endTime: word.endTime,
+      };
+    }
+  }
+
+  // Push the last segment
+  merged.push(currentSegment);
+
+  return merged;
 }
 
 /**
@@ -174,8 +221,23 @@ export function combineTranscriptWithCaptions(
     };
   }
 
-  // No caption data, return plain transcript
-  console.log("[ElevenLabs] No caption data available, using plain transcript");
+  // No caption data, format using ElevenLabs segments if available
+  console.log("[ElevenLabs] No caption data available, using ElevenLabs diarization");
+
+  // If we have ElevenLabs segments with speakers, format them
+  if (captionData && Array.isArray(captionData) && captionData.length > 0) {
+    // captionData here is actually ElevenLabs segments passed from the orchestrator
+    const formattedText = captionData
+      .map(seg => `Speaker ${seg.speaker || 'Unknown'}: ${seg.text}`)
+      .join('\n');
+
+    return {
+      fullText: formattedText,
+      segments: captionData,
+      transcriptSource: "elevenlabs_diarization",
+    };
+  }
+
   return {
     fullText: elevenLabsTranscript,
     segments: [],
