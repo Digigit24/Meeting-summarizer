@@ -1,10 +1,14 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import fs from "fs";
 import path from "path";
-import { exec } from "child_process";
-import { promisify } from "util";
+import ffmpegFluent from "fluent-ffmpeg";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import ffprobeInstaller from "@ffprobe-installer/ffprobe";
 
-const execPromise = promisify(exec);
+// Set ffmpeg and ffprobe paths from installed packages
+ffmpegFluent.setFfmpegPath(ffmpegInstaller.path);
+ffmpegFluent.setFfprobePath(ffprobeInstaller.path);
+
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 
 // Limits for chunking (ElevenLabs typically supports up to 100MB)
@@ -12,22 +16,24 @@ const MAX_FILE_SIZE_MB = 20; // Split if larger than 20MB for safety
 const CHUNK_DURATION_MINUTES = 15; // 15-minute chunks for long recordings
 
 /**
- * Get audio duration in seconds using ffprobe
+ * Get audio duration in seconds using ffprobe (fluent-ffmpeg)
  */
 async function getAudioDuration(audioFilePath) {
-  try {
-    const { stdout } = await execPromise(
-      `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioFilePath}"`
-    );
-    return parseFloat(stdout.trim());
-  } catch (error) {
-    console.warn("[ElevenLabs] Could not determine audio duration:", error.message);
-    return null;
-  }
+  return new Promise((resolve) => {
+    ffmpegFluent.ffprobe(audioFilePath, (err, metadata) => {
+      if (err) {
+        console.warn("[ElevenLabs] Could not determine audio duration:", err.message);
+        resolve(null);
+      } else {
+        const duration = metadata.format.duration;
+        resolve(duration);
+      }
+    });
+  });
 }
 
 /**
- * Split large audio file into chunks using ffmpeg
+ * Split large audio file into chunks using ffmpeg (fluent-ffmpeg)
  */
 async function splitAudioIntoChunks(audioFilePath, chunkDurationSeconds) {
   const fileName = path.basename(audioFilePath, path.extname(audioFilePath));
@@ -38,23 +44,30 @@ async function splitAudioIntoChunks(audioFilePath, chunkDurationSeconds) {
   console.log(`[ElevenLabs] Splitting audio into ${chunkDurationSeconds}s chunks...`);
   console.log(`[ElevenLabs] Chunk pattern: ${chunkPattern}`);
 
-  try {
-    await execPromise(
-      `ffmpeg -i "${audioFilePath}" -f segment -segment_time ${chunkDurationSeconds} -c copy "${chunkPattern}"`
-    );
+  return new Promise((resolve, reject) => {
+    ffmpegFluent(audioFilePath)
+      .outputOptions([
+        '-f segment',
+        `-segment_time ${chunkDurationSeconds}`,
+        '-c copy'
+      ])
+      .output(chunkPattern)
+      .on('end', () => {
+        // Find all created chunk files
+        const chunkFiles = fs.readdirSync(fileDir)
+          .filter(file => file.startsWith(`${fileName}_chunk_`) && file.endsWith(fileExt))
+          .map(file => path.join(fileDir, file))
+          .sort();
 
-    // Find all created chunk files
-    const chunkFiles = fs.readdirSync(fileDir)
-      .filter(file => file.startsWith(`${fileName}_chunk_`) && file.endsWith(fileExt))
-      .map(file => path.join(fileDir, file))
-      .sort();
-
-    console.log(`[ElevenLabs] Created ${chunkFiles.length} chunks`);
-    return chunkFiles;
-  } catch (error) {
-    console.error("[ElevenLabs] Error splitting audio:", error.message);
-    throw new Error(`Failed to split audio: ${error.message}`);
-  }
+        console.log(`[ElevenLabs] Created ${chunkFiles.length} chunks`);
+        resolve(chunkFiles);
+      })
+      .on('error', (err) => {
+        console.error("[ElevenLabs] Error splitting audio:", err.message);
+        reject(new Error(`Failed to split audio: ${err.message}`));
+      })
+      .run();
+  });
 }
 
 /**
