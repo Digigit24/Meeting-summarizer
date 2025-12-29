@@ -1,14 +1,144 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import fs from "fs";
+import path from "path";
+import { exec } from "child_process";
+import { promisify } from "util";
 
+const execPromise = promisify(exec);
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+
+// Limits for chunking (ElevenLabs typically supports up to 100MB)
+const MAX_FILE_SIZE_MB = 20; // Split if larger than 20MB for safety
+const CHUNK_DURATION_MINUTES = 15; // 15-minute chunks for long recordings
+
+/**
+ * Get audio duration in seconds using ffprobe
+ */
+async function getAudioDuration(audioFilePath) {
+  try {
+    const { stdout } = await execPromise(
+      `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioFilePath}"`
+    );
+    return parseFloat(stdout.trim());
+  } catch (error) {
+    console.warn("[ElevenLabs] Could not determine audio duration:", error.message);
+    return null;
+  }
+}
+
+/**
+ * Split large audio file into chunks using ffmpeg
+ */
+async function splitAudioIntoChunks(audioFilePath, chunkDurationSeconds) {
+  const fileName = path.basename(audioFilePath, path.extname(audioFilePath));
+  const fileDir = path.dirname(audioFilePath);
+  const fileExt = path.extname(audioFilePath);
+  const chunkPattern = path.join(fileDir, `${fileName}_chunk_%03d${fileExt}`);
+
+  console.log(`[ElevenLabs] Splitting audio into ${chunkDurationSeconds}s chunks...`);
+  console.log(`[ElevenLabs] Chunk pattern: ${chunkPattern}`);
+
+  try {
+    await execPromise(
+      `ffmpeg -i "${audioFilePath}" -f segment -segment_time ${chunkDurationSeconds} -c copy "${chunkPattern}"`
+    );
+
+    // Find all created chunk files
+    const chunkFiles = fs.readdirSync(fileDir)
+      .filter(file => file.startsWith(`${fileName}_chunk_`) && file.endsWith(fileExt))
+      .map(file => path.join(fileDir, file))
+      .sort();
+
+    console.log(`[ElevenLabs] Created ${chunkFiles.length} chunks`);
+    return chunkFiles;
+  } catch (error) {
+    console.error("[ElevenLabs] Error splitting audio:", error.message);
+    throw new Error(`Failed to split audio: ${error.message}`);
+  }
+}
+
+/**
+ * Transcribe a single audio file (chunk) with ElevenLabs
+ */
+async function transcribeSingleFile(audioFilePath, chunkIndex = null) {
+  const label = chunkIndex !== null ? `chunk ${chunkIndex}` : "file";
+  console.log(`[ElevenLabs] Transcribing ${label}: ${path.basename(audioFilePath)}`);
+
+  const client = new ElevenLabsClient({ apiKey: ELEVENLABS_API_KEY });
+  const audioStream = fs.createReadStream(audioFilePath);
+
+  const response = await client.speechToText.convert({
+    file: audioStream,
+    modelId: "scribe_v1",
+    tagAudioEvents: true,
+    languageCode: "eng",
+    diarize: true,
+  });
+
+  const transcriptText = response.text || "";
+  const wordCount = transcriptText.trim() ? transcriptText.trim().split(/\s+/).filter(w => w.length > 0).length : 0;
+
+  console.log(`[ElevenLabs] ${label} transcribed: ${wordCount} words, ${response.words?.length || 0} diarized words`);
+
+  return {
+    text: transcriptText,
+    words: response.words || [],
+    language: response.language_code || "eng"
+  };
+}
+
+/**
+ * Combine results from multiple chunks, adjusting timestamps
+ */
+function combineChunkResults(chunkResults, chunkDurationSeconds) {
+  console.log(`[ElevenLabs] Combining ${chunkResults.length} chunk results...`);
+
+  let fullText = "";
+  let allWords = [];
+  let timeOffset = 0;
+
+  for (let i = 0; i < chunkResults.length; i++) {
+    const chunk = chunkResults[i];
+
+    // Add text
+    if (fullText && chunk.text) {
+      fullText += " " + chunk.text;
+    } else {
+      fullText += chunk.text;
+    }
+
+    // Add words with adjusted timestamps
+    if (chunk.words && Array.isArray(chunk.words)) {
+      const adjustedWords = chunk.words.map(w => ({
+        ...w,
+        start: (w.start || 0) + timeOffset,
+        end: (w.end || 0) + timeOffset
+      }));
+      allWords.push(...adjustedWords);
+    }
+
+    // Update time offset for next chunk
+    timeOffset += chunkDurationSeconds;
+  }
+
+  console.log(`[ElevenLabs] Combined: ${fullText.length} chars, ${allWords.length} words`);
+
+  return {
+    text: fullText,
+    words: allWords,
+    language_code: chunkResults[0]?.language || "eng"
+  };
+}
 
 /**
  * Transcribes audio using the official ElevenLabs SDK
+ * Handles large files by chunking them if necessary
  * @param {string} audioFilePath - Path to the audio file
  * @returns {Promise<Object>} - Transcript with text and metadata
  */
 export async function transcribeWithElevenLabs(audioFilePath) {
+  let chunkFiles = [];
+
   try {
     console.log("[ElevenLabs] Starting transcription using SDK...");
     console.log(`[ElevenLabs] Audio file path: ${audioFilePath}`);
@@ -33,21 +163,80 @@ export async function transcribeWithElevenLabs(audioFilePath) {
       throw new Error("ElevenLabs API key not configured");
     }
 
-    const client = new ElevenLabsClient({ apiKey: ELEVENLABS_API_KEY });
-    // createReadStream returns a stream, which the SDK accepts as 'file'
-    const audioStream = fs.createReadStream(audioFilePath);
+    // Check if file needs chunking
+    const needsChunking = parseFloat(fileSizeMB) > MAX_FILE_SIZE_MB;
+    let response;
 
-    console.log("[ElevenLabs] Sending audio to ElevenLabs API...");
-    console.log("[ElevenLabs] Model: scribe_v1, Diarization: enabled");
+    if (needsChunking) {
+      console.log(`[ElevenLabs] ⚠️  File size (${fileSizeMB} MB) exceeds limit (${MAX_FILE_SIZE_MB} MB)`);
+      console.log(`[ElevenLabs] 🔄 Will process in ${CHUNK_DURATION_MINUTES}-minute chunks to ensure reliability`);
 
-    // Using scribe_v1 with diarization and audio events as requested
-    const response = await client.speechToText.convert({
-      file: audioStream,
-      modelId: "scribe_v1",
-      tagAudioEvents: true,
-      languageCode: "eng",
-      diarize: true,
-    });
+      // Get audio duration
+      const durationSeconds = await getAudioDuration(audioFilePath);
+      if (durationSeconds) {
+        console.log(`[ElevenLabs] Audio duration: ${(durationSeconds / 60).toFixed(2)} minutes`);
+      }
+
+      // Split into chunks
+      const chunkDurationSeconds = CHUNK_DURATION_MINUTES * 60;
+      chunkFiles = await splitAudioIntoChunks(audioFilePath, chunkDurationSeconds);
+
+      console.log(`[ElevenLabs] 📊 Processing ${chunkFiles.length} chunks (${CHUNK_DURATION_MINUTES} min each)...`);
+
+      // Process each chunk
+      const chunkResults = [];
+      for (let i = 0; i < chunkFiles.length; i++) {
+        console.log(`[ElevenLabs] ▶️  Chunk ${i + 1}/${chunkFiles.length}...`);
+
+        try {
+          const chunkResult = await transcribeSingleFile(chunkFiles[i], i + 1);
+          chunkResults.push(chunkResult);
+          console.log(`[ElevenLabs] ✅ Chunk ${i + 1}/${chunkFiles.length} completed`);
+        } catch (error) {
+          console.error(`[ElevenLabs] ❌ Chunk ${i + 1} failed:`, error.message);
+          throw new Error(`Failed to process chunk ${i + 1}: ${error.message}`);
+        }
+      }
+
+      // Verify all chunks were processed
+      if (chunkResults.length !== chunkFiles.length) {
+        throw new Error(`Chunk processing incomplete: ${chunkResults.length}/${chunkFiles.length} chunks processed`);
+      }
+
+      console.log(`[ElevenLabs] ✅ All ${chunkFiles.length} chunks processed successfully`);
+
+      // Combine chunk results
+      response = combineChunkResults(chunkResults, chunkDurationSeconds);
+
+      // Clean up chunk files
+      console.log(`[ElevenLabs] 🧹 Cleaning up ${chunkFiles.length} chunk files...`);
+      for (const chunkFile of chunkFiles) {
+        try {
+          if (fs.existsSync(chunkFile)) {
+            fs.unlinkSync(chunkFile);
+          }
+        } catch (error) {
+          console.warn(`[ElevenLabs] Could not delete chunk: ${chunkFile}`);
+        }
+      }
+      chunkFiles = []; // Clear array after cleanup
+
+    } else {
+      // Process single file (no chunking needed)
+      console.log("[ElevenLabs] File size is within limits, processing as single file");
+      console.log("[ElevenLabs] Model: scribe_v1, Diarization: enabled");
+
+      const client = new ElevenLabsClient({ apiKey: ELEVENLABS_API_KEY });
+      const audioStream = fs.createReadStream(audioFilePath);
+
+      response = await client.speechToText.convert({
+        file: audioStream,
+        modelId: "scribe_v1",
+        tagAudioEvents: true,
+        languageCode: "eng",
+        diarize: true,
+      });
+    }
 
     console.log("[ElevenLabs] Transcription completed successfully");
     console.log(`[ElevenLabs] Response structure:`, {
@@ -120,6 +309,20 @@ export async function transcribeWithElevenLabs(audioFilePath) {
     return result;
   } catch (error) {
     console.error("[ElevenLabs] Transcription error:", error);
+
+    // Clean up chunk files if they exist
+    if (chunkFiles.length > 0) {
+      console.log(`[ElevenLabs] 🧹 Cleaning up ${chunkFiles.length} chunk files after error...`);
+      for (const chunkFile of chunkFiles) {
+        try {
+          if (fs.existsSync(chunkFile)) {
+            fs.unlinkSync(chunkFile);
+          }
+        } catch (cleanupError) {
+          console.warn(`[ElevenLabs] Could not delete chunk: ${chunkFile}`);
+        }
+      }
+    }
 
     let errorMessage = error.message;
     // Handle SDK specific error objects if necessary

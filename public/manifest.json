@@ -28,6 +28,11 @@
   },
   "content_scripts": [
     {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/floatingWidget.js"],
+      "run_at": "document_end"
+    },
+    {
       "matches": [
         "https://meet.google.com/*",
         "https://*.zoom.us/*",
