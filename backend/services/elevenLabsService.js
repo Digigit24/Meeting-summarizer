@@ -76,12 +76,29 @@ export async function transcribeWithElevenLabs(audioFilePath) {
       console.log(`[ElevenLabs] Processing ${response.words.length} diarized words into segments`);
 
       // Group words by speaker to create speaker segments
-      const wordSegments = response.words.map((w) => ({
-        text: w.text,
-        startTime: w.start,
-        endTime: w.end,
-        speaker: w.speaker_id || "Unknown",
-      }));
+      const wordSegments = response.words.map((w, idx) => {
+        // Log first few words to debug speaker ID format
+        if (idx < 3) {
+          console.log(`[ElevenLabs] Word ${idx}: "${w.text}", speaker_id:`, w.speaker_id, `(type: ${typeof w.speaker_id})`);
+        }
+
+        // Handle speaker ID - could be number, string, or undefined
+        let speakerId;
+        if (w.speaker_id !== undefined && w.speaker_id !== null) {
+          speakerId = String(w.speaker_id);
+        } else if (w.speaker !== undefined && w.speaker !== null) {
+          speakerId = String(w.speaker);
+        } else {
+          speakerId = "0"; // Default to speaker 0 if not provided
+        }
+
+        return {
+          text: w.text,
+          startTime: w.start,
+          endTime: w.end,
+          speaker: speakerId,
+        };
+      });
 
       // Merge consecutive words from the same speaker into segments
       segments = mergeWordsIntoSegments(wordSegments);

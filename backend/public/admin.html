@@ -474,7 +474,8 @@
                     ${meeting.s3_url ? `
                         <div class="section">
                             <div class="section-title">🔊 Audio Recording</div>
-                            <audio class="audio-player" controls>
+                            <audio class="audio-player" controls preload="metadata">
+                                <source src="${API_BASE}/audio/${meeting.id}" type="audio/webm">
                                 <source src="${meeting.s3_url}" type="audio/webm">
                                 Your browser does not support the audio element.
                             </audio>
