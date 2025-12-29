@@ -33,7 +33,7 @@
         "https://*.zoom.us/*",
         "https://teams.microsoft.com/*"
       ],
-      "js": ["src/content/platformDetect.js", "src/content/scraper.js"],
+      "js": ["src/content/scraper.js"],
       "run_at": "document_end"
     }
   ],

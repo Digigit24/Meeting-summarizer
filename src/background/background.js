@@ -142,3 +142,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sessionTranscript.push(msg.data);
   }
 });
+// Open permissions page on install
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "install") {
+    chrome.tabs.create({ url: "permissions.html" });
+  }
+});

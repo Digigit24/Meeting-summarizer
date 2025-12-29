@@ -45,8 +45,14 @@ async function startRecording(streamId, meetingId) {
   let micStream;
   try {
     micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log("Microphone access granted.");
   } catch (e) {
-    console.warn("Microphone access denied or failed", e);
+    console.error(
+      "Microphone access FAILED. Error Name:",
+      e.name,
+      "Message:",
+      e.message
+    );
     // Continue with just tab audio if mic fails
   }
 
