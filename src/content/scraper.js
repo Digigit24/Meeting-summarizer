@@ -64,19 +64,59 @@ if (!window.meetSyncScraperInjected) {
     if (!rawText || rawText.length < 2) return; // Ignore noise
     if (rawText === lastProcessedText) return; // Ignore duplicates
 
-    // 3. Find Speaker
+    // 3. Find Speaker - Try multiple strategies
     let speaker = "Unknown";
-    const parent = latestNode.parentElement?.parentElement; // Heuristic
-    if (parent) {
-      let speakerNode = parent.querySelector(config.speakerSelector);
+
+    // Strategy 1: Look in parent elements (up to 5 levels)
+    let currentNode = latestNode;
+    for (let i = 0; i < 5; i++) {
+      if (!currentNode.parentElement) break;
+      currentNode = currentNode.parentElement;
+
+      // Try primary selector
+      let speakerNode = currentNode.querySelector(config.speakerSelector);
+
+      // Try fallbacks
       if (!speakerNode && config.fallbacks) {
         for (const sel of config.fallbacks.speaker) {
-          speakerNode = parent.querySelector(sel);
+          speakerNode = currentNode.querySelector(sel);
           if (speakerNode) break;
         }
       }
-      if (speakerNode) speaker = speakerNode.innerText;
+
+      if (speakerNode) {
+        const speakerText = speakerNode.innerText.trim();
+        // Make sure it's actually the speaker, not the caption text
+        if (speakerText && speakerText !== rawText && speakerText.length < 100) {
+          speaker = speakerText;
+          break;
+        }
+      }
     }
+
+    // Strategy 2: Look for speaker in siblings
+    if (speaker === "Unknown" && latestNode.parentElement) {
+      const siblings = Array.from(latestNode.parentElement.children);
+      for (const sibling of siblings) {
+        if (sibling === latestNode) continue;
+
+        // Check if sibling matches speaker selector
+        if (sibling.matches && sibling.matches(config.speakerSelector)) {
+          speaker = sibling.innerText.trim();
+          break;
+        }
+
+        // Check if sibling contains speaker element
+        const speakerInSibling = sibling.querySelector(config.speakerSelector);
+        if (speakerInSibling) {
+          speaker = speakerInSibling.innerText.trim();
+          break;
+        }
+      }
+    }
+
+    // Log for debugging
+    console.log(`MeetSync Caption: [${speaker}] ${rawText.substring(0, 50)}...`);
 
     lastProcessedText = rawText;
     lastProcessedTime = Date.now();

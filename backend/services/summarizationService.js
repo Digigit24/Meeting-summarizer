@@ -1,21 +1,22 @@
 import { encoding_for_model } from "tiktoken";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Groq } from "groq-sdk";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Use gemini-1.5-flash for free tier (reliable and widely available)
-const GEMINI_MODEL = "gemini-1.5-flash";
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
 
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 const MAX_CHUNK_TOKENS = 4000; // Chunk size for better summaries
 
 /**
- * Summarizes a long meeting transcript using map-reduce chunking
+ * Summarizes a long meeting transcript using map-reduce chunking with Groq
  * @param {string} transcript - Full meeting transcript with speaker labels
  * @param {Array} segments - Array of speaker segments (optional)
  * @returns {Promise<Object>} - Summary, action items, and key points
  */
 export async function summarizeMeeting(transcript, segments = []) {
   try {
-    console.log("[Summarization] Starting meeting summarization...");
+    console.log("[Summarization] Starting meeting summarization with Groq...");
     console.log(`[Summarization] Transcript length: ${transcript.length} characters`);
 
     // Step 1: Tokenize and chunk the transcript
@@ -106,7 +107,7 @@ function chunkTranscriptByTokens(text, maxTokens) {
 }
 
 /**
- * Summarizes a single chunk of the transcript using Gemini with retry logic
+ * Summarizes a single chunk of the transcript using Groq (Llama 3.3)
  */
 async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
   const maxRetries = 3;
@@ -114,15 +115,11 @@ async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const model = genAI.getGenerativeModel({
-        model: GEMINI_MODEL,
-        generationConfig: {
-          temperature: 0.5,
-          maxOutputTokens: 1024,
-        }
-      });
-
-      const prompt = `You are summarizing a segment (part ${chunkIndex} of ${totalChunks}) of a meeting transcript.
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: `You are summarizing a segment (part ${chunkIndex} of ${totalChunks}) of a meeting transcript.
 
 Extract key discussion points, decisions made, and any action items mentioned.
 Preserve important details like who said what for critical decisions.
@@ -131,20 +128,25 @@ Be concise but comprehensive.
 Transcript segment:
 ${chunkText}
 
-Provide a clear, structured summary of this segment.`;
+Provide a clear, structured summary of this segment.`
+          }
+        ],
+        model: GROQ_MODEL,
+        temperature: 0.5,
+        max_completion_tokens: 1024,
+        top_p: 1,
+      });
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
+      return chatCompletion.choices[0]?.message?.content || `[Error: No response for chunk ${chunkIndex}]`;
     } catch (error) {
       lastError = error;
       console.error(`[Summarization] Error summarizing chunk ${chunkIndex} (attempt ${attempt}/${maxRetries}):`, error.message);
 
-      // If quota exceeded, wait before retrying
-      if (error.message.includes('quota') || error.message.includes('429')) {
+      // If rate limited, wait before retrying
+      if (error.message.includes('rate') || error.message.includes('429')) {
         if (attempt < maxRetries) {
           const waitTime = Math.min(5000 * attempt, 30000); // Wait 5s, 10s, 15s
-          console.log(`[Summarization] Quota exceeded, waiting ${waitTime/1000}s before retry...`);
+          console.log(`[Summarization] Rate limited, waiting ${waitTime/1000}s before retry...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       } else {
@@ -155,24 +157,21 @@ Provide a clear, structured summary of this segment.`;
   }
 
   console.error(`[Summarization] Failed to summarize chunk ${chunkIndex} after ${maxRetries} attempts`);
-  return `[Unable to summarize this segment due to API limitations]`;
+  return `[Unable to summarize this segment - ${lastError?.message || 'Unknown error'}]`;
 }
 
 /**
- * Creates final comprehensive summary from chunk summaries using Gemini
+ * Creates final comprehensive summary from chunk summaries using Groq
  */
 async function createFinalSummary(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n---\n\n");
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: GEMINI_MODEL,
-      generationConfig: {
-        temperature: 0.3,
-      }
-    });
-
-    const prompt = `You are creating a comprehensive meeting summary from segment summaries.
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: `You are creating a comprehensive meeting summary from segment summaries.
 
 Create a well-structured summary with:
 1. **Overview**: Brief meeting context and main topic
@@ -185,11 +184,16 @@ Be clear, concise, and professional. Use bullet points for readability.
 
 Here are the segment summaries:
 
-${combinedSummaries}`;
+${combinedSummaries}`
+        }
+      ],
+      model: GROQ_MODEL,
+      temperature: 0.3,
+      max_completion_tokens: 1024,
+      top_p: 1,
+    });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    return chatCompletion.choices[0]?.message?.content || chunkSummaries.join("\n\n");
   } catch (error) {
     console.error("[Summarization] Error creating final summary:", error.message);
     // Fallback: concatenate chunk summaries
@@ -198,31 +202,33 @@ ${combinedSummaries}`;
 }
 
 /**
- * Extracts action items from summaries using Gemini
+ * Extracts action items from summaries using Groq
  */
 async function extractActionItems(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n");
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: GEMINI_MODEL,
-      generationConfig: {
-        temperature: 0.2,
-      }
-    });
-
-    const prompt = `Extract all action items from the meeting summaries.
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: `Extract all action items from the meeting summaries.
 Format each action item as:
 - [Action item description] (Owner: [name if mentioned, else "Unassigned"])
 
 Return only the bullet list, no extra text.
 
 Summaries:
-${combinedSummaries}`;
+${combinedSummaries}`
+        }
+      ],
+      model: GROQ_MODEL,
+      temperature: 0.2,
+      max_completion_tokens: 512,
+      top_p: 1,
+    });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const actionItemsText = response.text();
+    const actionItemsText = chatCompletion.choices[0]?.message?.content || '';
 
     // Parse into array
     return actionItemsText
