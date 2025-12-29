@@ -25,8 +25,8 @@ app.use(express.json());
 
 // Auth Middleware (Basic API Key)
 app.use((req, res, next) => {
-  // Skip auth for health check
-  if (req.path === "/") {
+  // Skip auth for health check and admin panel
+  if (req.path === "/" || req.path.startsWith("/admin")) {
     return next();
   }
 
@@ -44,17 +44,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve admin panel (no auth required for easy access)
+app.use("/admin", express.static("public"));
+
 app.use("/api", meetingRoutes);
 app.use("/uploads", express.static("uploads")); // Serve local audio files if S3 fails
 
 app.get("/", (req, res) => {
-  res.send("MeetSync Backend Running");
+  res.send("MeetSync Backend Running - Visit /admin/admin.html for the dashboard");
 });
 
 app.listen(PORT, () => {
+  console.log(`\n========================================`);
   console.log(`✅ MeetSync Backend Running on http://localhost:${PORT}`);
-  console.log(`✅ API Key configured: ${process.env.API_SECRET_KEY ? "Yes" : "No"}`);
-  console.log(`✅ ElevenLabs API Key configured: ${process.env.ELEVENLABS_API_KEY ? "Yes" : "No"}`);
-  console.log(`✅ Gemini API Key configured: ${process.env.GEMINI_API_KEY ? "Yes" : "No"}`);
-  console.log(`✅ AWS configured: ${process.env.AWS_ACCESS_KEY_ID ? "Yes" : "No (using local fallback)"}`);
+  console.log(`========================================`);
+  console.log(`📊 Admin Dashboard: http://localhost:${PORT}/admin/admin.html`);
+  console.log(`🔧 API Endpoint: http://localhost:${PORT}/api`);
+  console.log(`========================================`);
+  console.log(`🔑 API Key configured: ${process.env.API_SECRET_KEY ? "Yes" : "No"}`);
+  console.log(`🎤 ElevenLabs API Key configured: ${process.env.ELEVENLABS_API_KEY ? "Yes" : "No"}`);
+  console.log(`🤖 Gemini API Key configured: ${process.env.GEMINI_API_KEY ? "Yes" : "No"}`);
+  console.log(`☁️  AWS configured: ${process.env.AWS_ACCESS_KEY_ID ? "Yes" : "No (using local fallback)"}`);
+  console.log(`========================================\n`);
 });
