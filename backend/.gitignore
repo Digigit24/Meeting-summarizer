@@ -4,3 +4,5 @@
 node_modules
 .env.example
 /.env.example
+uploads/
+test_*.js
