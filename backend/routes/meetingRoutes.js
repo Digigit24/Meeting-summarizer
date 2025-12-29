@@ -21,27 +21,78 @@ const s3 = new S3Client({
 // Upload Endpoint
 router.post("/upload", upload.single("audio"), uploadMeeting);
 
-// List Meetings
+// List Meetings (includes soft-deleted)
 router.get("/meetings", async (req, res) => {
   try {
     const meetings = await prisma.meeting.findMany({
       orderBy: { created_at: "desc" },
     });
-    res.json(meetings);
+    res.json({ meetings });
   } catch (error) {
+    console.error("[Meetings API] Error fetching meetings:", error);
     res.status(500).json({ error: "Failed to fetch meetings" });
   }
 });
 
-// Delete Meeting
+// Soft Delete Meeting
 router.delete("/meetings/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.meeting.delete({ where: { id } });
-    // Optional: Delete from S3 logic here
-    res.json({ message: "Meeting deleted" });
+
+    // Soft delete by setting deleted_at timestamp
+    const meeting = await prisma.meeting.update({
+      where: { id },
+      data: { deleted_at: new Date() }
+    });
+
+    console.log(`[Meetings API] Soft deleted meeting: ${id}`);
+    res.json({ message: "Meeting moved to trash", meeting });
   } catch (error) {
+    console.error("[Meetings API] Error deleting meeting:", error);
     res.status(500).json({ error: "Delete failed" });
+  }
+});
+
+// Restore Meeting
+router.post("/meetings/:id/restore", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Restore by clearing deleted_at
+    const meeting = await prisma.meeting.update({
+      where: { id },
+      data: { deleted_at: null }
+    });
+
+    console.log(`[Meetings API] Restored meeting: ${id}`);
+    res.json({ message: "Meeting restored", meeting });
+  } catch (error) {
+    console.error("[Meetings API] Error restoring meeting:", error);
+    res.status(500).json({ error: "Restore failed" });
+  }
+});
+
+// Permanently Delete Old Meetings (auto-cleanup cron job)
+router.delete("/meetings/cleanup/old", async (req, res) => {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Delete meetings that were soft-deleted more than 30 days ago
+    const result = await prisma.meeting.deleteMany({
+      where: {
+        deleted_at: {
+          lte: thirtyDaysAgo,
+          not: null
+        }
+      }
+    });
+
+    console.log(`[Meetings API] Permanently deleted ${result.count} old meetings`);
+    res.json({ message: `Deleted ${result.count} old meetings`, count: result.count });
+  } catch (error) {
+    console.error("[Meetings API] Error cleaning up old meetings:", error);
+    res.status(500).json({ error: "Cleanup failed" });
   }
 });
 
