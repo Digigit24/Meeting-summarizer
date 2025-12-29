@@ -80,23 +80,32 @@ export const startProcessing = async (
           console.log(`[Orchestrator]   - Transcript length: ${elevenLabsResult.fullText.length} characters`);
           console.log(`[Orchestrator]   - Word count: ${elevenLabsResult.words}`);
 
-          // Combine with caption data for speaker identification
+          // PRIORITY: Use client captions with actual speaker names from Google Meet
           if (clientTranscript.length > 0) {
             console.log(
-              "[Orchestrator] Combining ElevenLabs transcript with caption data for speaker identification..."
-            );
-            const combined = combineTranscriptWithCaptions(
-              elevenLabsResult.fullText,
-              clientTranscript
+              "[Orchestrator] ✓ Using client captions with REAL speaker names from Google Meet"
             );
 
-            fullTranscript = combined.fullText;
-            speakerSegments = combined.segments;
-            transcriptSource = combined.transcriptSource;
+            // Use client transcript as-is (has real names like "Prateek", "Divya")
+            fullTranscript = clientTranscript
+              .map((t) => `${t.speaker}: ${t.text}`)
+              .join("\n");
 
-            console.log(`[Orchestrator]   - Combined ${combined.segments.length} speaker segments`);
+            // Convert to segments format for database
+            speakerSegments = clientTranscript.map((t) => ({
+              speaker: t.speaker,  // Real name from Google Meet
+              text: t.text,
+              startTime: t.timestamp,
+            }));
+
+            transcriptSource = "client_captions";
+
+            console.log(`[Orchestrator]   - Using ${speakerSegments.length} caption segments with real speaker names`);
+            console.log(`[Orchestrator]   - Sample: ${speakerSegments.slice(0, 2).map(s => `${s.speaker}: ${s.text.substring(0, 30)}...`).join(", ")}`);
           } else {
-            // Use diarized segments from ElevenLabs
+            console.log("[Orchestrator] ⚠️  No client captions available, falling back to ElevenLabs speaker IDs");
+
+            // Fallback: Use diarized segments from ElevenLabs (Speaker 0, Speaker 1, etc.)
             speakerSegments = elevenLabsResult.segments || [];
             transcriptSource = "elevenlabs_diarization";
 
@@ -105,11 +114,11 @@ export const startProcessing = async (
               fullTranscript = speakerSegments
                 .map(seg => `Speaker ${seg.speaker}: ${seg.text}`)
                 .join('\n');
-              console.log(`[Orchestrator] Formatted transcript with ${speakerSegments.length} speaker segments from ElevenLabs`);
+              console.log(`[Orchestrator] Formatted transcript with ${speakerSegments.length} ElevenLabs speaker segments`);
             } else {
               // Fallback to plain text if no segments
               fullTranscript = elevenLabsResult.fullText;
-              console.log("[Orchestrator] No ElevenLabs segments, using plain transcript");
+              console.log("[Orchestrator] No segments, using plain transcript");
             }
           }
           elevenLabsSuccess = true;

@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeetSync Admin Dashboard</title>
+    <title>MeetSync Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -12,7 +14,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -23,252 +25,324 @@
             margin: 0 auto;
         }
 
-        header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
         }
 
-        header h1 {
-            color: #667eea;
+        .header h1 {
             font-size: 32px;
-            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
         }
 
-        header p {
-            color: #666;
-            font-size: 16px;
+        .header p {
+            color: #64748b;
+            font-size: 15px;
         }
 
-        .stats {
+        .header-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
 
         .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
         }
 
         .stat-card h3 {
-            color: #999;
-            font-size: 14px;
+            font-size: 12px;
             text-transform: uppercase;
-            margin-bottom: 10px;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
 
         .stat-card .value {
-            color: #333;
             font-size: 36px;
-            font-weight: bold;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
+        /* Meeting Cards */
         .meetings-container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .meeting-card {
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
+            background: white;
+            border: 2px solid #f1f5f9;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 24px;
             transition: all 0.3s ease;
         }
 
         .meeting-card:hover {
             border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
         }
 
         .meeting-header {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f7fafc;
-        }
-
-        .meeting-title {
-            flex: 1;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
         }
 
         .meeting-title h2 {
-            color: #2d3748;
             font-size: 24px;
-            margin-bottom: 8px;
+            color: #1e293b;
+            margin-bottom: 12px;
         }
 
         .meeting-meta {
             display: flex;
-            gap: 15px;
+            gap: 20px;
             flex-wrap: wrap;
         }
 
         .meta-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
             font-size: 14px;
-            color: #718096;
+            color: #64748b;
+        }
+
+        .meta-item i {
+            color: #94a3b8;
         }
 
         .status-badge {
-            padding: 6px 16px;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
         }
 
         .status-completed {
-            background: #d4edda;
-            color: #155724;
+            background: #dcfce7;
+            color: #166534;
         }
 
         .status-processing {
-            background: #fff3cd;
-            color: #856404;
+            background: #fef3c7;
+            color: #92400e;
         }
 
         .status-failed {
-            background: #f8d7da;
-            color: #721c24;
+            background: #fee2e2;
+            color: #991b1b;
         }
 
-        .status-transcribed {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .section {
+        /* Modern Collapsible Section */
+        .collapsible-section {
             margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+        }
+
+        .section-header:hover {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
         }
 
         .section-title {
-            color: #667eea;
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .section-title i {
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .toggle-icon {
+            font-size: 14px;
+            color: #94a3b8;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.expanded {
+            transform: rotate(180deg);
         }
 
         .section-content {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 8px;
-            color: #2d3748;
-            line-height: 1.6;
-            max-height: 300px;
-            overflow-y: auto;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
         }
 
-        .section-content::-webkit-scrollbar {
-            width: 8px;
+        .section-content.expanded {
+            max-height: 2000px;
         }
 
-        .section-content::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            border-radius: 4px;
+        .section-content-inner {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 12px;
+            line-height: 1.8;
+            color: #334155;
         }
 
-        .section-content::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 4px;
+        /* Preview Mode */
+        .preview-mode {
+            max-height: 60px;
+            overflow: hidden;
+            position: relative;
         }
 
-        .transcript-line {
-            margin-bottom: 8px;
-            padding: 8px;
-            background: white;
-            border-radius: 4px;
+        .preview-mode::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(transparent, #fafafa);
         }
 
-        .speaker-name {
-            font-weight: bold;
+        /* Notion-Style Summary */
+        .summary-content {
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .summary-content h1 {
+            font-size: 28px;
+            margin: 24px 0 16px 0;
+            color: #1e293b;
+        }
+
+        .summary-content h2 {
+            font-size: 22px;
+            margin: 20px 0 12px 0;
+            color: #334155;
+        }
+
+        .summary-content h3 {
+            font-size: 18px;
+            margin: 16px 0 8px 0;
+            color: #475569;
+        }
+
+        .summary-content ul {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+
+        .summary-content li {
+            margin: 8px 0;
+        }
+
+        .summary-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .summary-content table th,
+        .summary-content table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+
+        .summary-content table th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+
+        .summary-content strong {
             color: #667eea;
-            margin-right: 8px;
+            font-weight: 600;
         }
 
-        .action-items {
-            list-style: none;
-        }
-
-        .action-items li {
-            padding: 10px;
-            margin-bottom: 8px;
-            background: white;
-            border-radius: 4px;
-            border-left: 4px solid #667eea;
-        }
-
+        /* Audio Player */
         .audio-player {
             width: 100%;
-            margin-top: 10px;
-        }
-
-        .error-log {
-            background: #fff5f5;
-            border: 1px solid #fc8181;
-            color: #742a2a;
-            padding: 15px;
+            margin-top: 12px;
             border-radius: 8px;
-            margin-bottom: 15px;
         }
 
-        .processing-stage {
-            display: inline-block;
-            padding: 4px 12px;
-            background: #e6f7ff;
-            color: #0066cc;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .info-item {
-            background: #f7fafc;
-            padding: 12px;
-            border-radius: 6px;
-        }
-
-        .info-label {
-            font-size: 12px;
-            color: #718096;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .info-value {
-            font-size: 16px;
-            color: #2d3748;
-            font-weight: 500;
-        }
-
+        /* Loading */
         .loading {
             text-align: center;
             padding: 60px;
-            color: #667eea;
-            font-size: 18px;
         }
 
         .spinner {
@@ -278,7 +352,7 @@
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 0 auto 20px;
         }
 
         @keyframes spin {
@@ -286,43 +360,34 @@
             100% { transform: rotate(360deg); }
         }
 
-        .refresh-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 12px 24px;
+        .caption-line {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
             border-radius: 8px;
-            font-size: 16px;
+            border-left: 3px solid #667eea;
+        }
+
+        .caption-speaker {
             font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .refresh-btn:hover {
-            background: #5568d3;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #718096;
-        }
-
-        .empty-state h3 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            color: #667eea;
+            margin-right: 8px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🎙️ MeetSync Admin Dashboard</h1>
-            <p>View and manage all meeting recordings, transcriptions, and summaries</p>
-            <button class="refresh-btn" onclick="loadMeetings()" style="margin-top: 15px;">🔄 Refresh Data</button>
-        </header>
+        <div class="header">
+            <h1>🎙️ MeetSync Dashboard</h1>
+            <p>View and manage all your meeting recordings, transcriptions, and AI-powered summaries</p>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="loadMeetings()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
 
-        <div class="stats" id="stats">
+        <div class="stats-grid" id="stats">
             <div class="stat-card">
                 <h3>Total Meetings</h3>
                 <div class="value" id="totalMeetings">0</div>
@@ -363,166 +428,140 @@
 
             try {
                 const response = await fetch(`${API_BASE}/meetings`, {
-                    headers: {
-                        'x-api-key': API_KEY
-                    }
+                    headers: { 'x-api-key': API_KEY }
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to fetch meetings');
-                }
+                if (!response.ok) throw new Error('Failed to fetch meetings');
 
                 const meetings = await response.json();
-
                 loadingState.style.display = 'none';
 
                 if (meetings.length === 0) {
-                    meetingsList.innerHTML = `
-                        <div class="empty-state">
-                            <h3>No meetings found</h3>
-                            <p>Start recording a meeting to see it here!</p>
-                        </div>
-                    `;
+                    meetingsList.innerHTML = '<p style="text-align:center;color:#64748b;">No meetings found. Start recording!</p>';
                     return;
                 }
 
                 updateStats(meetings);
                 renderMeetings(meetings);
-
             } catch (error) {
                 loadingState.style.display = 'none';
-                meetingsList.innerHTML = `
-                    <div class="error-log">
-                        <strong>Error loading meetings:</strong> ${error.message}
-                    </div>
-                `;
+                meetingsList.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
             }
         }
 
         function updateStats(meetings) {
-            const total = meetings.length;
-            const completed = meetings.filter(m => m.status === 'completed').length;
-            const processing = meetings.filter(m => m.status === 'processing').length;
-            const totalWords = meetings.reduce((sum, m) => sum + (m.transcription_words || 0), 0);
+            document.getElementById('totalMeetings').textContent = meetings.length;
+            document.getElementById('completedMeetings').textContent = meetings.filter(m => m.status === 'completed').length;
+            document.getElementById('processingMeetings').textContent = meetings.filter(m => m.status === 'processing').length;
+            document.getElementById('totalWords').textContent = meetings.reduce((sum, m) => sum + (m.transcription_words || 0), 0).toLocaleString();
+        }
 
-            document.getElementById('totalMeetings').textContent = total;
-            document.getElementById('completedMeetings').textContent = completed;
-            document.getElementById('processingMeetings').textContent = processing;
-            document.getElementById('totalWords').textContent = totalWords.toLocaleString();
+        function toggleSection(id) {
+            const content = document.getElementById(`content-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            const isExpanded = content.classList.contains('expanded');
+
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
         }
 
         function renderMeetings(meetings) {
             const meetingsList = document.getElementById('meetingsList');
 
-            meetingsList.innerHTML = meetings.map(meeting => `
+            meetingsList.innerHTML = meetings.map((meeting, idx) => `
                 <div class="meeting-card">
                     <div class="meeting-header">
                         <div class="meeting-title">
                             <h2>${escapeHtml(meeting.name || 'Untitled Meeting')}</h2>
                             <div class="meeting-meta">
                                 <span class="meta-item">
-                                    📅 ${new Date(meeting.created_at).toLocaleString()}
+                                    <i class="far fa-calendar"></i>
+                                    ${new Date(meeting.created_at).toLocaleString()}
                                 </span>
                                 <span class="meta-item">
-                                    💾 ${formatFileSize(meeting.audio_file_size)}
+                                    <i class="far fa-file-audio"></i>
+                                    ${formatFileSize(meeting.audio_file_size)}
                                 </span>
                                 ${meeting.transcription_words ? `
                                     <span class="meta-item">
-                                        📝 ${meeting.transcription_words} words
+                                        <i class="far fa-comment"></i>
+                                        ${meeting.transcription_words} words
                                     </span>
                                 ` : ''}
                             </div>
                         </div>
-                        <div>
-                            <span class="status-badge status-${meeting.status || 'processing'}">
-                                ${meeting.status || 'processing'}
-                            </span>
-                            ${meeting.processing_stage ? `
-                                <br><br>
-                                <span class="processing-stage">
-                                    ${meeting.processing_stage}
-                                </span>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    ${meeting.error_log ? `
-                        <div class="error-log">
-                            <strong>⚠️ Error:</strong> ${escapeHtml(meeting.error_log)}
-                        </div>
-                    ` : ''}
-
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">Meeting ID</div>
-                            <div class="info-value" style="font-size: 12px;">${meeting.id}</div>
-                        </div>
-                        ${meeting.duration ? `
-                            <div class="info-item">
-                                <div class="info-label">Duration</div>
-                                <div class="info-value">${meeting.duration} min</div>
-                            </div>
-                        ` : ''}
-                        ${meeting.sentiment ? `
-                            <div class="info-item">
-                                <div class="info-label">Sentiment</div>
-                                <div class="info-value">${meeting.sentiment}</div>
-                            </div>
-                        ` : ''}
+                        <span class="status-badge status-${meeting.status || 'processing'}">
+                            ${meeting.status || 'processing'}
+                        </span>
                     </div>
 
                     ${meeting.s3_url ? `
-                        <div class="section">
-                            <div class="section-title">🔊 Audio Recording</div>
-                            <audio class="audio-player" controls preload="metadata">
-                                <source src="${API_BASE}/audio/${meeting.id}" type="audio/webm">
-                                <source src="${meeting.s3_url}" type="audio/webm">
-                                Your browser does not support the audio element.
-                            </audio>
+                        <div class="collapsible-section">
+                            <div class="section-header" onclick="toggleSection('audio-${idx}')">
+                                <div class="section-title">
+                                    <i class="fas fa-volume-up"></i>
+                                    Audio Recording
+                                </div>
+                                <i class="fas fa-chevron-down toggle-icon" id="icon-audio-${idx}"></i>
+                            </div>
+                            <div class="section-content" id="content-audio-${idx}">
+                                <div class="section-content-inner">
+                                    <audio class="audio-player" controls preload="metadata">
+                                        <source src="${API_BASE}/audio/${meeting.id}" type="audio/webm">
+                                        <source src="${meeting.s3_url}" type="audio/webm">
+                                    </audio>
+                                </div>
+                            </div>
                         </div>
                     ` : ''}
 
                     ${meeting.client_transcript ? `
-                        <div class="section">
-                            <div class="section-title">📋 Client Captions (Scraped)</div>
-                            <div class="section-content">
-                                ${formatTranscript(meeting.client_transcript)}
+                        <div class="collapsible-section">
+                            <div class="section-header" onclick="toggleSection('captions-${idx}')">
+                                <div class="section-title">
+                                    <i class="fas fa-closed-captioning"></i>
+                                    Meeting Captions (from Google Meet)
+                                </div>
+                                <i class="fas fa-chevron-down toggle-icon" id="icon-captions-${idx}"></i>
+                            </div>
+                            <div class="section-content" id="content-captions-${idx}">
+                                <div class="section-content-inner">
+                                    ${formatCaptions(meeting.client_transcript)}
+                                </div>
                             </div>
                         </div>
                     ` : ''}
 
                     ${meeting.elevenlabs_transcript ? `
-                        <div class="section">
-                            <div class="section-title">🎤 ElevenLabs Transcription</div>
-                            <div class="section-content">
-                                ${escapeHtml(meeting.elevenlabs_transcript)}
+                        <div class="collapsible-section">
+                            <div class="section-header" onclick="toggleSection('eleven-${idx}')">
+                                <div class="section-title">
+                                    <i class="fas fa-microphone"></i>
+                                    Audio Transcription
+                                </div>
+                                <i class="fas fa-chevron-down toggle-icon" id="icon-eleven-${idx}"></i>
                             </div>
-                        </div>
-                    ` : ''}
-
-                    ${meeting.raw_transcript ? `
-                        <div class="section">
-                            <div class="section-title">📝 Final Transcript (with Speakers)</div>
-                            <div class="section-content">
-                                ${formatTranscript(meeting.raw_transcript)}
+                            <div class="section-content" id="content-eleven-${idx}">
+                                <div class="section-content-inner preview-mode" id="preview-eleven-${idx}">
+                                    ${escapeHtml(meeting.elevenlabs_transcript)}
+                                </div>
                             </div>
                         </div>
                     ` : ''}
 
                     ${meeting.summary ? `
-                        <div class="section">
-                            <div class="section-title">✨ AI Summary</div>
-                            <div class="section-content">
-                                ${formatSummary(meeting.summary)}
+                        <div class="collapsible-section">
+                            <div class="section-header" onclick="toggleSection('summary-${idx}')">
+                                <div class="section-title">
+                                    <i class="fas fa-sparkles"></i>
+                                    AI Summary
+                                </div>
+                                <i class="fas fa-chevron-down toggle-icon expanded" id="icon-summary-${idx}"></i>
                             </div>
-                        </div>
-                    ` : ''}
-
-                    ${meeting.action_items ? `
-                        <div class="section">
-                            <div class="section-title">✅ Action Items</div>
-                            <div class="section-content">
-                                ${formatActionItems(meeting.action_items)}
+                            <div class="section-content expanded" id="content-summary-${idx}">
+                                <div class="section-content-inner summary-content">
+                                    ${formatMarkdown(meeting.summary)}
+                                </div>
                             </div>
                         </div>
                     ` : ''}
@@ -530,8 +569,8 @@
             `).join('');
         }
 
-        function formatTranscript(transcript) {
-            if (!transcript) return '<em>No transcript available</em>';
+        function formatCaptions(transcript) {
+            if (!transcript) return '<em>No captions available</em>';
 
             return transcript.split('\n')
                 .filter(line => line.trim())
@@ -539,40 +578,26 @@
                     if (line.includes(':')) {
                         const [speaker, ...textParts] = line.split(':');
                         const text = textParts.join(':').trim();
-                        return `<div class="transcript-line">
-                            <span class="speaker-name">${escapeHtml(speaker)}:</span>
+                        return `<div class="caption-line">
+                            <span class="caption-speaker">${escapeHtml(speaker)}:</span>
                             <span>${escapeHtml(text)}</span>
                         </div>`;
                     }
-                    return `<div class="transcript-line">${escapeHtml(line)}</div>`;
+                    return `<div class="caption-line">${escapeHtml(line)}</div>`;
                 })
                 .join('');
         }
 
-        function formatSummary(summary) {
-            if (!summary) return '<em>No summary available</em>';
+        function formatMarkdown(text) {
+            if (!text) return '';
 
-            // Convert markdown-style formatting to HTML
-            return escapeHtml(summary)
+            // Convert markdown to HTML
+            return text
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\n/g, '<br>');
-        }
-
-        function formatActionItems(actionItemsJson) {
-            if (!actionItemsJson) return '<em>No action items</em>';
-
-            try {
-                const items = JSON.parse(actionItemsJson);
-                if (!Array.isArray(items) || items.length === 0) {
-                    return '<em>No action items</em>';
-                }
-
-                return '<ul class="action-items">' +
-                    items.map(item => `<li>${escapeHtml(item)}</li>`).join('') +
-                    '</ul>';
-            } catch (e) {
-                return `<div>${escapeHtml(actionItemsJson)}</div>`;
-            }
         }
 
         function formatFileSize(bytes) {

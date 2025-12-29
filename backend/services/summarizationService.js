@@ -118,23 +118,46 @@ async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
       const chatCompletion = await groq.chat.completions.create({
         messages: [
           {
+            role: "system",
+            content: `You are an expert meeting summarizer. You understand multiple languages including English, Hindi, Hinglish (Hindi-English mix), and Marathi. Extract every important detail, preserve speaker names exactly as shown, and create comprehensive summaries.`
+          },
+          {
             role: "user",
-            content: `You are summarizing a segment (part ${chunkIndex} of ${totalChunks}) of a meeting transcript.
+            content: `Summarize this meeting transcript segment (part ${chunkIndex} of ${totalChunks}).
 
-Extract key discussion points, decisions made, and any action items mentioned.
-Preserve important details like who said what for critical decisions.
-Be concise but comprehensive.
+IMPORTANT INSTRUCTIONS:
+1. **Preserve Speaker Names**: Keep exact speaker names from transcript (e.g., "Prateek", "Divya", not "Speaker 0")
+2. **Multilingual Support**: This transcript may contain Hindi, English, Hinglish, or Marathi. Understand and summarize all languages.
+3. **Comprehensive Details**: Do NOT miss any important points, decisions, or discussions
+4. **Speaker Attribution**: Always mention WHO said WHAT for every important point
+5. **Structure**: Use clear sections and bullet points
 
-Transcript segment:
+FORMAT YOUR RESPONSE AS:
+### Key Discussion Points
+- **[Speaker Name]**: [What they said/discussed] - [Context/details]
+- **[Speaker Name]**: [What they said/discussed] - [Context/details]
+
+### Decisions Made
+- [Decision] - Proposed by **[Speaker Name]**
+- [Decision] - Agreed upon by **[Speaker Name]** and **[Speaker Name]**
+
+### Action Items
+- [Task] - Assigned to **[Speaker Name]**
+- [Task] - To be done by **[Speaker Name]**
+
+### Important Notes
+- [Any other critical information with speaker attribution]
+
+TRANSCRIPT SEGMENT:
 ${chunkText}
 
-Provide a clear, structured summary of this segment.`
+Provide a detailed, comprehensive summary preserving ALL speaker names and important information.`
           }
         ],
         model: GROQ_MODEL,
-        temperature: 0.5,
-        max_completion_tokens: 1024,
-        top_p: 1,
+        temperature: 0.3,  // Lower temperature for more accurate transcription
+        max_completion_tokens: 2048,  // Increased for comprehensive summaries
+        top_p: 0.9,
       });
 
       return chatCompletion.choices[0]?.message?.content || `[Error: No response for chunk ${chunkIndex}]`;
@@ -170,27 +193,78 @@ async function createFinalSummary(chunkSummaries) {
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
+          role: "system",
+          content: `You are an expert at creating comprehensive meeting summaries. You understand multiple languages (English, Hindi, Hinglish, Marathi). Create detailed, well-formatted summaries that preserve all speaker names and important information.`
+        },
+        {
           role: "user",
-          content: `You are creating a comprehensive meeting summary from segment summaries.
+          content: `Create a comprehensive final summary from these segment summaries.
 
-Create a well-structured summary with:
-1. **Overview**: Brief meeting context and main topic
-2. **Key Discussion Points**: Main topics discussed (bullet points)
-3. **Decisions Made**: Important decisions and outcomes
-4. **Action Items**: Tasks and next steps (if mentioned)
-5. **Next Steps**: What happens next
+CRITICAL REQUIREMENTS:
+1. **Preserve ALL Speaker Names**: Use exact names from segments (e.g., "Prateek", "Divya", NOT "Speaker 0" or generic names)
+2. **Comprehensive Coverage**: Include EVERY important point, decision, and discussion from ALL segments
+3. **Speaker Attribution**: Always attribute WHO said or did WHAT
+4. **Professional Format**: Use Notion-style markdown formatting with clear sections
+5. **Chronological Flow**: Maintain the meeting's natural progression
 
-Be clear, concise, and professional. Use bullet points for readability.
+FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 
-Here are the segment summaries:
+# 📋 Meeting Summary
 
-${combinedSummaries}`
+## 🎯 Overview
+[2-3 sentences about what this meeting was about, main topic, and overall outcome]
+
+## 💬 Key Discussion Points
+
+### Topic 1: [Topic Name]
+- **Prateek** mentioned that [specific point with details]
+- **Divya** responded by [specific response with context]
+- **[Name]** added that [additional context]
+
+### Topic 2: [Topic Name]
+- **[Name]** discussed [specific discussion point]
+- **[Name]** agreed and [their input]
+
+## ✅ Decisions Made
+
+| Decision | Proposed By | Status |
+|----------|------------|--------|
+| [Specific decision] | **[Speaker Name]** | Approved |
+| [Specific decision] | **[Speaker Name]** | Pending |
+
+## 📝 Action Items
+
+- [ ] **[Task description]** - Assigned to: **[Speaker Name]** - Due: [if mentioned]
+- [ ] **[Task description]** - Assigned to: **[Speaker Name]** - Due: [if mentioned]
+- [ ] **[Task description]** - Assigned to: **[Speaker Name]** - Due: [if mentioned]
+
+## 🎙️ Speaker Contributions
+
+- **Prateek**: [Brief summary of their main contributions]
+- **Divya**: [Brief summary of their main contributions]
+- **[Other Names]**: [Their contributions]
+
+## 🔍 Important Notes
+- [Any critical information, deadlines, or concerns mentioned]
+- [Follow-up items or next meeting topics]
+
+## 🚀 Next Steps
+1. [First next step with responsible person]
+2. [Second next step with responsible person]
+
+---
+
+SEGMENT SUMMARIES TO CONSOLIDATE:
+
+${combinedSummaries}
+
+Create a comprehensive final summary following the exact format above. Use actual speaker names from the segments.`
         }
       ],
       model: GROQ_MODEL,
-      temperature: 0.3,
-      max_completion_tokens: 1024,
-      top_p: 1,
+      temperature: 0.2,
+      max_completion_tokens: 3000,  // Increased for comprehensive final summary
+      top_p: 0.9,
     });
 
     return chatCompletion.choices[0]?.message?.content || chunkSummaries.join("\n\n");
