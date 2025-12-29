@@ -16,6 +16,7 @@ model Meeting {
   action_items  String?    // Stored as JSON string for SQLite compatibility
   sentiment     String?  // Added for sentiment analysis result
   duration      Int?
+  status        String?  @default("processing")
   created_at    DateTime @default(now())
   
   segments      SpeakerSegment[]

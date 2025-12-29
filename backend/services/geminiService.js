@@ -4,9 +4,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Use Gemini 2.5 Flash (latest model)
 // Fallback order: gemini-2.5-flash -> gemini-2.0-flash-exp -> gemini-1.5-flash
-const MODEL_NAME = "gemini-2.0-flash-exp"; // Update to "gemini-2.5-flash" when available
+const MODEL_NAME = "gemini-2.5-flash";
 
-export async function summarizeWithGemini(transcriptText, retryCount = 0) {
+async function summarizeWithGemini(transcriptText, retryCount = 0) {
   const MAX_RETRIES = 3;
   const model = genAI.getGenerativeModel({
     model: MODEL_NAME,
@@ -39,7 +39,7 @@ export async function summarizeWithGemini(transcriptText, retryCount = 0) {
         "Decision 2"
       ],
       "action_items": [
-         { "owner": "Name or Role", "task": "Specific task description", "deadline": "Date/Time if mentioned, else 'TBD'" }
+        { "owner": "Name or Role", "task": "Specific task description", "deadline": "Date/Time if mentioned, else 'TBD'" }
       ],
       "next_meeting_agenda": "Brief agenda if discussed, else null"
     }
@@ -62,5 +62,76 @@ export async function summarizeWithGemini(transcriptText, retryCount = 0) {
     } else {
       throw new Error("Gemini API failed after max retries.");
     }
+  }
+}
+
+export { summarizeWithGemini };
+
+export async function transcribeWithGemini(
+  filePath,
+  mimeType = "audio/webm",
+  retryCount = 0
+) {
+  try {
+    const fs = await import("fs");
+    const audioData = fs.readFileSync(filePath).toString("base64");
+    const MAX_RETRIES = 3;
+
+    const model = genAI.getGenerativeModel({
+      model: MODEL_NAME,
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const prompt = `
+      Transcribe the following audio meeting recording.
+      Verify the speakers by analyzing voice characteristics if possible, or label as Speaker 1, Speaker 2 etc.
+      
+      Return the result in this JSON format:
+      {
+        "language": "en",
+        "words": 0,
+        "fullText": "Full transcript...",
+        "segments": [
+          { "speaker": "Speaker 1", "text": "Hello", "startTime": 0.0 }
+        ]
+      }
+    `;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: mimeType,
+          data: audioData,
+        },
+      },
+    ]);
+
+    const response = await result.response;
+    return JSON.parse(response.text());
+  } catch (error) {
+    console.error(
+      `Gemini Transcription Attempt ${retryCount + 1} failed:`,
+      error.message
+    );
+
+    // Check for rate limit error specifically (429) or general failure
+    const isRateLimit =
+      error.message.includes("429") || error.message.includes("Quota exceeded");
+    const MAX_RETRIES = 3;
+
+    if (retryCount < MAX_RETRIES) {
+      // Heavier backoff for rate limits: 5s, 10s, 20s
+      const backoffBase = isRateLimit ? 5000 : 2000;
+      const delay = backoffBase * (retryCount + 1);
+
+      console.log(`Retrying transcription in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return transcribeWithGemini(filePath, mimeType, retryCount + 1);
+    }
+
+    throw error;
   }
 }

@@ -1,63 +1,81 @@
-import axios from "axios";
-import FormData from "form-data";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import fs from "fs";
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/speech-to-text";
 
 /**
- * Transcribes audio using ElevenLabs Speech-to-Text API
+ * Transcribes audio using the official ElevenLabs SDK
  * @param {string} audioFilePath - Path to the audio file
  * @returns {Promise<Object>} - Transcript with text and metadata
  */
 export async function transcribeWithElevenLabs(audioFilePath) {
   try {
-    console.log("[ElevenLabs] Starting transcription...");
+    console.log("[ElevenLabs] Starting transcription using SDK...");
 
-    if (!ELEVENLABS_API_KEY || ELEVENLABS_API_KEY === "your-elevenlabs-api-key-here") {
+    if (
+      !ELEVENLABS_API_KEY ||
+      ELEVENLABS_API_KEY === "your-elevenlabs-api-key-here"
+    ) {
       throw new Error("ElevenLabs API key not configured");
     }
 
-    // Create form data with audio file
-    // ElevenLabs expects parameter name "file" not "audio"
-    const formData = new FormData();
-    formData.append("file", fs.createReadStream(audioFilePath));
+    const client = new ElevenLabsClient({ apiKey: ELEVENLABS_API_KEY });
+    // createReadStream returns a stream, which the SDK accepts as 'file'
+    const audioStream = fs.createReadStream(audioFilePath);
 
-    // Use the latest speech-to-text model
-    // Valid models: 'scribe_v1', 'scribe_v1_experimental', 'scribe_v2'
-    formData.append("model_id", "scribe_v2");
-
-    // Make API request
-    const response = await axios.post(ELEVENLABS_API_URL, formData, {
-      headers: {
-        ...formData.getHeaders(),
-        "xi-api-key": ELEVENLABS_API_KEY,
-      },
-      timeout: 300000, // 5 minutes timeout for large files
+    // Using scribe_v1 with diarization and audio events as requested
+    const response = await client.speechToText.convert({
+      file: audioStream,
+      modelId: "scribe_v1",
+      tagAudioEvents: true,
+      languageCode: "eng",
+      diarize: true,
     });
 
     console.log("[ElevenLabs] Transcription completed successfully");
 
-    // ElevenLabs returns: { text: "...", language: "en", ... }
-    const transcriptText = response.data.text || "";
-    const language = response.data.language || "unknown";
+    // The response structure from the new SDK should be inspected.
+    // Assuming it returns an object with 'text' and 'language_code' and potentially 'words' for diarization.
+    const transcriptText = response.text || "";
+    const language = response.language_code || "eng";
 
-    // Return in standard format
+    // Map diarization words if available to segments
+    let segments = [];
+    if (response.words && Array.isArray(response.words)) {
+      segments = response.words.map((w) => ({
+        text: w.text,
+        startTime: w.start,
+        endTime: w.end,
+        speaker: w.speaker_id || "Unknown",
+      }));
+    }
+
     return {
       fullText: transcriptText,
       language: language,
-      segments: [], // ElevenLabs basic API doesn't provide speaker diarization
-      words: transcriptText.split(" ").length,
+      segments: segments,
+      words: transcriptText.split(/\s+/).length,
+      raw: response,
     };
   } catch (error) {
-    console.error("[ElevenLabs] Transcription error:", error.message);
+    console.error("[ElevenLabs] Transcription error:", error);
 
-    if (error.response) {
-      console.error("[ElevenLabs] API Response:", error.response.data);
-      throw new Error(`ElevenLabs API error: ${error.response.data.detail || error.response.statusText}`);
+    let errorMessage = error.message;
+    // Handle SDK specific error objects if necessary
+    if (error.body && error.body.detail) {
+      errorMessage =
+        typeof error.body.detail === "object"
+          ? JSON.stringify(error.body.detail)
+          : error.body.detail;
     }
 
-    throw error;
+    if (errorMessage.includes("Unusual activity")) {
+      console.error(
+        "[ElevenLabs] 🛑 BLOCKED: Account flagged for unusual activity/free tier abuse."
+      );
+    }
+
+    throw new Error(`ElevenLabs API error: ${errorMessage}`);
   }
 }
 
@@ -73,7 +91,9 @@ export function createSegmentsFromCaptions(transcript, captionData) {
     return [];
   }
 
-  console.log(`[ElevenLabs] Creating segments from ${captionData.length} caption entries`);
+  console.log(
+    `[ElevenLabs] Creating segments from ${captionData.length} caption entries`
+  );
 
   // Convert caption data to segments format
   const segments = captionData.map((caption, index) => ({
@@ -95,13 +115,19 @@ export function createSegmentsFromCaptions(transcript, captionData) {
  * @param {Array} captionData - Caption data with speakers from extension
  * @returns {Object} - Combined result with speaker segments
  */
-export function combineTranscriptWithCaptions(elevenLabsTranscript, captionData) {
+export function combineTranscriptWithCaptions(
+  elevenLabsTranscript,
+  captionData
+) {
   // If we have caption data, use it for speaker identification
   if (captionData && captionData.length > 0) {
     console.log("[ElevenLabs] Using caption data for speaker identification");
 
-    const segments = createSegmentsFromCaptions(elevenLabsTranscript, captionData);
-    const fullText = segments.map(s => `${s.speaker}: ${s.text}`).join("\n");
+    const segments = createSegmentsFromCaptions(
+      elevenLabsTranscript,
+      captionData
+    );
+    const fullText = segments.map((s) => `${s.speaker}: ${s.text}`).join("\n");
 
     return {
       fullText: fullText,
