@@ -53,17 +53,25 @@ export const uploadMeeting = async (req, res) => {
     // Store the uploaded transcript if available (as fallback or primary)
     // The transcript comes as a JSON string from FormData
     const rawTranscript = transcript ? JSON.parse(transcript) : [];
-    const formattedTranscript = rawTranscript
+    const formattedClientTranscript = rawTranscript
       .map((t) => `${t.speaker}: ${t.text}`)
       .join("\n");
+
+    console.log(`[Backend Upload] Audio file size: ${file.size} bytes`);
+    console.log(`[Backend Upload] Client transcript entries: ${rawTranscript.length}`);
 
     const meeting = await prisma.meeting.create({
       data: {
         name: name || "Untitled Meeting",
         s3_url: s3Url,
-        raw_transcript: formattedTranscript || "", // Store initial draft
+        client_transcript: formattedClientTranscript || "", // Store client captions separately
+        audio_file_size: file.size,
+        processing_stage: "uploaded",
+        status: "processing",
       },
     });
+
+    console.log(`[Backend Upload] Created meeting record: ${meeting.id}`);
 
     // 3. Trigger Async Processing (Fire and Forget)
     // Pass the transcript draft too if we want to merge it

@@ -8,18 +8,34 @@ datasource db {
 }
 
 model Meeting {
-  id            String   @id @default(uuid())
-  name          String?
-  s3_url        String
-  raw_transcript String?
-  summary       String?
-  action_items  String?    // Stored as JSON string for SQLite compatibility
-  sentiment     String?  // Added for sentiment analysis result
-  duration      Int?
-  status        String?  @default("processing")
-  created_at    DateTime @default(now())
-  
-  segments      SpeakerSegment[]
+  id                    String   @id @default(uuid())
+  name                  String?
+  s3_url                String
+
+  // Transcription data - stored at each stage
+  client_transcript     String?  // Captions scraped from meeting
+  elevenlabs_transcript String?  // Raw transcription from ElevenLabs
+  raw_transcript        String?  // Final combined transcript with speakers
+
+  // Summarization data
+  summary               String?
+  action_items          String?  // Stored as JSON string
+  sentiment             String?  // Sentiment analysis result
+
+  // Metadata
+  duration              Int?
+  audio_file_size       Int?     // Size of uploaded audio file in bytes
+  transcription_words   Int?     // Word count from ElevenLabs
+
+  // Processing tracking
+  status                String?  @default("processing")
+  processing_stage      String?  // Track current stage: uploaded, transcribing, summarizing, completed
+  error_log             String?  // Store any errors encountered
+
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  segments              SpeakerSegment[]
 }
 
 model SpeakerSegment {

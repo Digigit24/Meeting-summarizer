@@ -11,6 +11,20 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 export async function transcribeWithElevenLabs(audioFilePath) {
   try {
     console.log("[ElevenLabs] Starting transcription using SDK...");
+    console.log(`[ElevenLabs] Audio file path: ${audioFilePath}`);
+
+    // Verify file exists and get size
+    if (!fs.existsSync(audioFilePath)) {
+      throw new Error(`Audio file not found: ${audioFilePath}`);
+    }
+
+    const fileStats = fs.statSync(audioFilePath);
+    const fileSizeMB = (fileStats.size / (1024 * 1024)).toFixed(2);
+    console.log(`[ElevenLabs] Audio file size: ${fileSizeMB} MB (${fileStats.size} bytes)`);
+
+    if (fileStats.size === 0) {
+      throw new Error("Audio file is empty (0 bytes)");
+    }
 
     if (
       !ELEVENLABS_API_KEY ||
@@ -23,6 +37,9 @@ export async function transcribeWithElevenLabs(audioFilePath) {
     // createReadStream returns a stream, which the SDK accepts as 'file'
     const audioStream = fs.createReadStream(audioFilePath);
 
+    console.log("[ElevenLabs] Sending audio to ElevenLabs API...");
+    console.log("[ElevenLabs] Model: scribe_v1, Diarization: enabled");
+
     // Using scribe_v1 with diarization and audio events as requested
     const response = await client.speechToText.convert({
       file: audioStream,
@@ -33,30 +50,51 @@ export async function transcribeWithElevenLabs(audioFilePath) {
     });
 
     console.log("[ElevenLabs] Transcription completed successfully");
+    console.log(`[ElevenLabs] Response structure:`, {
+      hasText: !!response.text,
+      textLength: response.text?.length || 0,
+      hasWords: !!response.words,
+      wordsCount: Array.isArray(response.words) ? response.words.length : 0,
+      languageCode: response.language_code,
+    });
 
     // The response structure from the new SDK should be inspected.
     // Assuming it returns an object with 'text' and 'language_code' and potentially 'words' for diarization.
     const transcriptText = response.text || "";
     const language = response.language_code || "eng";
 
+    console.log(`[ElevenLabs] Transcript text preview (first 200 chars): "${transcriptText.substring(0, 200)}..."`);
+    console.log(`[ElevenLabs] Full transcript length: ${transcriptText.length} characters`);
+
+    // Count words properly (excluding empty strings)
+    const wordCount = transcriptText.trim() ? transcriptText.trim().split(/\s+/).filter(w => w.length > 0).length : 0;
+    console.log(`[ElevenLabs] Word count: ${wordCount} words`);
+
     // Map diarization words if available to segments
     let segments = [];
     if (response.words && Array.isArray(response.words)) {
+      console.log(`[ElevenLabs] Processing ${response.words.length} diarized words into segments`);
       segments = response.words.map((w) => ({
         text: w.text,
         startTime: w.start,
         endTime: w.end,
         speaker: w.speaker_id || "Unknown",
       }));
+    } else {
+      console.log("[ElevenLabs] No diarization data in response");
     }
 
-    return {
+    const result = {
       fullText: transcriptText,
       language: language,
       segments: segments,
-      words: transcriptText.split(/\s+/).length,
+      words: wordCount,
       raw: response,
     };
+
+    console.log(`[ElevenLabs] Returning transcript with ${wordCount} words and ${segments.length} segments`);
+
+    return result;
   } catch (error) {
     console.error("[ElevenLabs] Transcription error:", error);
 

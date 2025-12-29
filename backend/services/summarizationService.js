@@ -2,7 +2,7 @@ import { encoding_for_model } from "tiktoken";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const GEMINI_MODEL = "gemini-2.0-flash-exp"; // Gemini 2.5 Flash when available
+const GEMINI_MODEL = "gemini-2.0-flash-exp"; // Using Gemini 2.0 Flash for summarization
 
 const MAX_CHUNK_TOKENS = 4000; // Gemini has larger context window (~1M tokens, but we chunk for better summaries)
 

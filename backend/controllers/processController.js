@@ -31,10 +31,18 @@ export const startProcessing = async (
     let speakerSegments = [];
     let transcriptSource = "none";
 
-    // STEP 1: Transcription
+    // STEP 1: Transcription with ElevenLabs (ONLY - no fallback to Gemini)
     let elevenLabsSuccess = false;
 
-    // STEP 1: Transcription with ElevenLabs Speech-to-Text
+    // Update processing stage
+    await prisma.meeting.update({
+      where: { id: meetingId },
+      data: {
+        processing_stage: "transcribing",
+        status: "processing",
+      },
+    });
+
     // Retry logic for ElevenLabs
     let retries = 3;
     let delay = 5000; // 5 seconds
@@ -57,15 +65,25 @@ export const startProcessing = async (
             `[Orchestrator]   - Language: ${elevenLabsResult.language}`
           );
           console.log(`[Orchestrator]   - Words: ${elevenLabsResult.words}`);
-          console.log(
-            "[Orchestrator] Full Result:",
-            JSON.stringify(elevenLabsResult, null, 2)
-          );
+
+          // IMMEDIATE SAVE: Store ElevenLabs raw transcript separately
+          await prisma.meeting.update({
+            where: { id: meetingId },
+            data: {
+              elevenlabs_transcript: elevenLabsResult.fullText,
+              transcription_words: elevenLabsResult.words,
+              processing_stage: "transcribed",
+              status: "transcribed",
+            },
+          });
+          console.log("[Orchestrator] ✓ Saved ElevenLabs transcript to database");
+          console.log(`[Orchestrator]   - Transcript length: ${elevenLabsResult.fullText.length} characters`);
+          console.log(`[Orchestrator]   - Word count: ${elevenLabsResult.words}`);
 
           // Combine with caption data for speaker identification
           if (clientTranscript.length > 0) {
             console.log(
-              "[Orchestrator] Combining ElevenLabs transcript with caption data..."
+              "[Orchestrator] Combining ElevenLabs transcript with caption data for speaker identification..."
             );
             const combined = combineTranscriptWithCaptions(
               elevenLabsResult.fullText,
@@ -75,23 +93,26 @@ export const startProcessing = async (
             fullTranscript = combined.fullText;
             speakerSegments = combined.segments;
             transcriptSource = combined.transcriptSource;
+
+            console.log(`[Orchestrator]   - Combined ${combined.segments.length} speaker segments`);
           } else {
             fullTranscript = elevenLabsResult.fullText;
             // Use diarized segments if available from ElevenLabs
             speakerSegments = elevenLabsResult.segments || [];
             transcriptSource = "elevenlabs_only";
+
+            console.log("[Orchestrator] No client captions available, using ElevenLabs transcript only");
           }
           elevenLabsSuccess = true;
 
-          // IMMEDIATE SAVE: Save raw transcript to DB
+          // IMMEDIATE SAVE: Save combined transcript with speakers
           await prisma.meeting.update({
             where: { id: meetingId },
             data: {
               raw_transcript: fullTranscript,
-              status: "transcribed", // Update status to indicate transcription success
             },
           });
-          console.log("[Orchestrator] Saved raw transcript to database.");
+          console.log("[Orchestrator] ✓ Saved combined transcript with speaker data");
         } catch (elevenLabsError) {
           console.error(
             `[Orchestrator] ElevenLabs transcription failed (Attempt ${
@@ -99,6 +120,16 @@ export const startProcessing = async (
             }):`,
             elevenLabsError.message
           );
+
+          // Store error in database
+          await prisma.meeting.update({
+            where: { id: meetingId },
+            data: {
+              error_log: `ElevenLabs transcription attempt ${4 - retries} failed: ${elevenLabsError.message}`,
+              processing_stage: "transcription_error",
+            },
+          });
+
           retries--;
           if (retries > 0) {
             console.log(
@@ -110,43 +141,34 @@ export const startProcessing = async (
         }
       } else {
         console.log(
-          "[Orchestrator] ElevenLabs API key not configured. Skipping AI transcription."
+          "[Orchestrator] ElevenLabs API key not configured. Cannot proceed without transcription."
         );
+        await prisma.meeting.update({
+          where: { id: meetingId },
+          data: {
+            error_log: "ElevenLabs API key not configured",
+            processing_stage: "error",
+            status: "failed",
+          },
+        });
         break; // Don't retry if no key
       }
     }
 
-    // Fallback to Gemini Transcription REMOVED per user request
-    // The pipeline effectively stops here if ElevenLabs fails,
-    // unless client-side captions (Step 1B) are present.
+    // NO FALLBACK to Gemini - ElevenLabs only as per user request
 
-    // STEP 1B: Fallback to Client Transcript (from scraped captions)
-    if (!fullTranscript && clientTranscript.length > 0) {
-      console.log(
-        "[Orchestrator] Using client-scraped transcript as primary source"
-      );
-      fullTranscript = clientTranscript
-        .map((t) => `${t.speaker}: ${t.text}`)
-        .join("\n");
-      transcriptSource = "client_captions";
-
-      // Convert to segments format
-      speakerSegments = clientTranscript.map((t) => ({
-        speaker: t.speaker,
-        text: t.text,
-        startTime: t.timestamp,
-      }));
-    }
-
+    // If ElevenLabs failed after all retries, stop processing
     if (!fullTranscript) {
       console.log(
-        "[Orchestrator] ⚠️  No transcript available. Saving meeting without processing."
+        "[Orchestrator] ⚠️  ElevenLabs transcription failed after all retries. Cannot proceed."
       );
       await prisma.meeting.update({
         where: { id: meetingId },
         data: {
-          raw_transcript: "No transcript available",
-          summary: "Processing failed: No transcript could be generated",
+          raw_transcript: "Transcription failed",
+          summary: "Processing failed: ElevenLabs transcription failed after 3 attempts",
+          processing_stage: "failed",
+          status: "failed",
         },
       });
       return;
@@ -161,7 +183,14 @@ export const startProcessing = async (
       } lines`
     );
 
-    // STEP 2: Summarization with Chunking & Map-Reduce
+    // STEP 2: Summarization with Chunking & Map-Reduce using Gemini
+    // Update processing stage
+    await prisma.meeting.update({
+      where: { id: meetingId },
+      data: {
+        processing_stage: "summarizing",
+      },
+    });
     let summaryResult = {
       summary: "Summarization skipped (no API key)",
       actionItems: [],
@@ -187,18 +216,25 @@ export const startProcessing = async (
         console.log(
           `[Orchestrator]   - Summary length: ${summaryResult.summary.length} chars`
         );
+        console.log(
+          `[Orchestrator]   - Action items: ${summaryResult.actionItems.length}`
+        );
+        console.log(
+          `[Orchestrator]   - Key points: ${summaryResult.keyPoints.length}`
+        );
 
         // IMMEDIATE SAVE: Save summary to DB
         await prisma.meeting.update({
           where: { id: meetingId },
           data: {
             summary: summaryResult.summary,
-            action_items: JSON.stringify(summaryResult.actionItems), // Ensure this is serializable
+            action_items: JSON.stringify(summaryResult.actionItems),
             sentiment: "Neutral",
+            processing_stage: "summarized",
             status: "completed",
           },
         });
-        console.log("[Orchestrator] Saved summary to database.");
+        console.log("[Orchestrator] ✓ Saved summary and action items to database.");
       } catch (sumError) {
         console.error("[Orchestrator] Summarization failed:", sumError.message);
         summaryResult.summary = `Summarization error: ${sumError.message}`;
@@ -210,7 +246,7 @@ export const startProcessing = async (
     }
 
     // STEP 3: Save Speaker Segments to Database
-    console.log("\n[Orchestrator] Step 3: Saving to database...");
+    console.log("\n[Orchestrator] Step 3: Saving speaker segments...");
 
     // Save speaker segments
     if (speakerSegments.length > 0) {
@@ -218,29 +254,29 @@ export const startProcessing = async (
         await prisma.speakerSegment.create({
           data: {
             meeting_id: meetingId,
-            speaker_name: segment.speaker,
+            speaker_name: segment.speaker || "Unknown",
             text: segment.text,
             timestamp: new Date(segment.startTime || Date.now()),
           },
         });
       }
       console.log(
-        `[Orchestrator] ✓ Saved ${speakerSegments.length} speaker segments`
+        `[Orchestrator] ✓ Saved ${speakerSegments.length} speaker segments to database`
       );
+    } else {
+      console.log("[Orchestrator] No speaker segments to save");
     }
 
-    // Update meeting record
+    // Final update to mark as completed
     await prisma.meeting.update({
       where: { id: meetingId },
       data: {
-        raw_transcript: fullTranscript,
-        summary: summaryResult.summary,
-        action_items: JSON.stringify(summaryResult.actionItems),
-        sentiment: "Neutral", // Can be enhanced with sentiment analysis
+        processing_stage: "completed",
+        status: "completed",
       },
     });
 
-    console.log(`[Orchestrator] ✓ Meeting record updated`);
+    console.log(`[Orchestrator] ✓ Meeting processing completed`);
 
     // STEP 4: Cleanup temporary audio file
     if (filePath && fs.existsSync(filePath)) {
