@@ -39,14 +39,29 @@ export const uploadMeeting = async (req, res) => {
     };
 
     let s3Url = "";
+    let s3UploadSuccess = false;
+
+    // Attempt S3 upload
     try {
+      console.log(`[S3 Upload] Attempting upload to bucket: ${process.env.AWS_BUCKET_NAME}`);
+      console.log(`[S3 Upload] Region: ${process.env.AWS_REGION}`);
+      console.log(`[S3 Upload] File key: ${fileKey}`);
+
       await s3.send(new PutObjectCommand(uploadParams));
       s3Url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+      s3UploadSuccess = true;
+
+      console.log(`[S3 Upload] ✅ SUCCESS! File uploaded to S3: ${s3Url}`);
     } catch (s3Error) {
-      console.warn("S3 Upload Failed. Using local fallback.", s3Error.message);
-      s3Url = `http://127.0.0.1:${process.env.PORT || 3001}/uploads/${
-        file.filename
-      }`;
+      console.error("[S3 Upload] ❌ FAILED - Using local fallback");
+      console.error("[S3 Upload] Error name:", s3Error.name);
+      console.error("[S3 Upload] Error message:", s3Error.message);
+      console.error("[S3 Upload] Error code:", s3Error.code);
+      console.error("[S3 Upload] Full error:", JSON.stringify(s3Error, null, 2));
+
+      // Use local fallback
+      s3Url = `http://127.0.0.1:${process.env.PORT || 3001}/uploads/${file.filename}`;
+      console.log(`[S3 Upload] Using local URL instead: ${s3Url}`);
     }
 
     // 2. Create Initial DB Record

@@ -126,44 +126,38 @@ async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
         messages: [
           {
             role: "system",
-            content: `You are an expert meeting summarizer. You understand multiple languages including English, Hindi, Hinglish (Hindi-English mix), and Marathi. Extract every important detail, preserve speaker names exactly as shown, and create comprehensive summaries.`
+            content: `You are a concise meeting summarizer. Create SHORT, actionable summaries. Use proper spacing (e.g., "Pratik mentioned" not "Pratikmentioned").`
           },
           {
             role: "user",
-            content: `Summarize this meeting transcript segment (part ${chunkIndex} of ${totalChunks}).
+            content: `Summarize this meeting segment (part ${chunkIndex} of ${totalChunks}) in 3-5 bullet points.
 
-IMPORTANT INSTRUCTIONS:
-1. **Preserve Speaker Names**: Keep exact speaker names from transcript (e.g., "Prateek", "Divya", not "Speaker 0")
-2. **Multilingual Support**: This transcript may contain Hindi, English, Hinglish, or Marathi. Understand and summarize all languages.
-3. **Comprehensive Details**: Do NOT miss any important points, decisions, or discussions
-4. **Speaker Attribution**: Always mention WHO said WHAT for every important point
-5. **Structure**: Use clear sections and bullet points
+CRITICAL RULES:
+1. **Be CONCISE** - Maximum 5 bullet points per section
+2. **Use proper spacing** - "Pratik mentioned" NOT "Pratikmentioned"
+3. **Keep speaker names exact** - Use names from transcript
+4. **Focus on KEY POINTS ONLY** - Skip minor details
 
-FORMAT YOUR RESPONSE AS:
-### Key Discussion Points
-- **[Speaker Name]**: [What they said/discussed] - [Context/details]
-- **[Speaker Name]**: [What they said/discussed] - [Context/details]
+FORMAT (SHORT):
+### Key Points
+- **[Name]**: [One sentence summary of their main point]
+- **[Name]**: [One sentence only]
 
-### Decisions Made
-- [Decision] - Proposed by **[Speaker Name]**
-- [Decision] - Agreed upon by **[Speaker Name]** and **[Speaker Name]**
+### Decisions (if any)
+- [Decision] - by **[Name]**
 
-### Action Items
-- [Task] - Assigned to **[Speaker Name]**
-- [Task] - To be done by **[Speaker Name]**
+### Action Items (if any)
+- [Task] - **[Name]**
 
-### Important Notes
-- [Any other critical information with speaker attribution]
-
-TRANSCRIPT SEGMENT:
+TRANSCRIPT:
 ${chunkText}
 
-Provide a detailed, comprehensive summary preserving ALL speaker names and important information.`
+Keep it SHORT and actionable. Maximum 5 bullet points total.`
           }
         ],
         model: GROQ_MODEL,
-        temperature: 0.3,  // Lower temperature for more accurate transcription
-        max_completion_tokens: 2048,  // Increased for comprehensive summaries
+        temperature: 0.3,
+        max_completion_tokens: 800,  // Reduced from 2048 for shorter summaries
         top_p: 0.9,
       });
 
@@ -191,7 +185,7 @@ Provide a detailed, comprehensive summary preserving ALL speaker names and impor
 }
 
 /**
- * Creates final comprehensive summary from chunk summaries using Groq
+ * Creates CONCISE final summary from chunk summaries using Groq
  */
 async function createFinalSummary(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n---\n\n");
@@ -201,76 +195,49 @@ async function createFinalSummary(chunkSummaries) {
       messages: [
         {
           role: "system",
-          content: `You are an expert at creating comprehensive meeting summaries. You understand multiple languages (English, Hindi, Hinglish, Marathi). Create detailed, well-formatted summaries that preserve all speaker names and important information.`
+          content: `You create SHORT, scannable meeting summaries. Use proper spacing in names. Be concise.`
         },
         {
           role: "user",
-          content: `Create a comprehensive final summary from these segment summaries.
+          content: `Create a SHORT final summary from these segment summaries.
 
-CRITICAL REQUIREMENTS:
-1. **Preserve ALL Speaker Names**: Use exact names from segments (e.g., "Prateek", "Divya", NOT "Speaker 0" or generic names)
-2. **Comprehensive Coverage**: Include EVERY important point, decision, and discussion from ALL segments
-3. **Speaker Attribution**: Always attribute WHO said or did WHAT
-4. **Professional Format**: Use Notion-style markdown formatting with clear sections
-5. **Chronological Flow**: Maintain the meeting's natural progression
+STRICT RULES:
+1. **BE CONCISE** - Keep it short and scannable
+2. **Proper spacing** - "Pratik mentioned" NOT "Pratikmentioned"
+3. **Use exact speaker names** from segments
+4. **Maximum 10 bullet points total** across ALL sections
+5. **Focus on OUTCOMES** not discussions
 
-FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+FORMAT (keep it SHORT):
 
-# 📋 Meeting Summary
+## 📋 Meeting Summary
 
-## 🎯 Overview
-[2-3 sentences about what this meeting was about, main topic, and overall outcome]
+**Topic:** [One sentence - what was this meeting about]
 
-## 💬 Key Discussion Points
+**Key Points:**
+- **[Name]** mentioned [one concise point]
+- **[Name]** suggested [one concise point]
 
-### Topic 1: [Topic Name]
-- **Prateek** mentioned that [specific point with details]
-- **Divya** responded by [specific response with context]
-- **[Name]** added that [additional context]
+**Decisions:**
+- [Decision] - by **[Name]**
 
-### Topic 2: [Topic Name]
-- **[Name]** discussed [specific discussion point]
-- **[Name]** agreed and [their input]
+**Action Items:**
+- [ ] [Task] - **[Name]**
 
-## ✅ Decisions Made
-
-| Decision | Proposed By | Status |
-|----------|------------|--------|
-| [Specific decision] | **[Speaker Name]** | Approved |
-| [Specific decision] | **[Speaker Name]** | Pending |
-
-## 📝 Action Items
-
-- [ ] **[Task description]** - Assigned to: **[Speaker Name]** - Due: [if mentioned]
-- [ ] **[Task description]** - Assigned to: **[Speaker Name]** - Due: [if mentioned]
-- [ ] **[Task description]** - Assigned to: **[Speaker Name]** - Due: [if mentioned]
-
-## 🎙️ Speaker Contributions
-
-- **Prateek**: [Brief summary of their main contributions]
-- **Divya**: [Brief summary of their main contributions]
-- **[Other Names]**: [Their contributions]
-
-## 🔍 Important Notes
-- [Any critical information, deadlines, or concerns mentioned]
-- [Follow-up items or next meeting topics]
-
-## 🚀 Next Steps
-1. [First next step with responsible person]
-2. [Second next step with responsible person]
+**Next Steps:**
+1. [Next action with owner]
 
 ---
 
-SEGMENT SUMMARIES TO CONSOLIDATE:
-
+SEGMENT SUMMARIES:
 ${combinedSummaries}
 
-Create a comprehensive final summary following the exact format above. Use actual speaker names from the segments.`
+Keep it SHORT - maximum 10 total bullet points. Use proper spacing in all names.`
         }
       ],
       model: GROQ_MODEL,
       temperature: 0.2,
-      max_completion_tokens: 3000,  // Increased for comprehensive final summary
+      max_completion_tokens: 1200,  // Reduced from 3000 for shorter summaries
       top_p: 0.9,
     });
 
