@@ -98,7 +98,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   // Handle Recording Stop
   if (msg.type === "STOP_RECORDING") {
-    console.log("[Background] Stopping recording for:", msg.meetingId);
+    console.log("[Background] Stopping recording");
+    console.log("[Background] Meeting name:", msg.meetingId);
+    console.log("[Background] Temp ID:", msg.tempMeetingId);
+
     chrome.runtime.sendMessage({ target: "offscreen", type: "STOP_RECORDING" });
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
@@ -119,9 +122,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sessionTranscript.length
     );
 
-    // Trigger Upload (Async)
+    // Trigger Upload (Async) - use tempMeetingId for audio lookup, meetingId for final name
+    const tempId = msg.tempMeetingId || msg.meetingId;
+    const finalName = msg.meetingId;
     console.log("[Background] Triggering uploadMeetingData...");
-    uploadMeetingData(msg.meetingId, msg.meetingId).then((res) => {
+    console.log("[Background] Audio ID:", tempId);
+    console.log("[Background] Final name:", finalName);
+
+    uploadMeetingData(tempId, finalName).then((res) => {
       console.log("[Background] Upload result:", res);
       if (res) {
         chrome.notifications.create({
