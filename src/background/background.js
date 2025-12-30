@@ -82,6 +82,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  // Handle Recording Discard
+  if (msg.type === "DISCARD_RECORDING") {
+    console.log("[Background] Discarding recording");
+    chrome.runtime.sendMessage({ target: "offscreen", type: "STOP_RECORDING" });
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { type: "STOP_SCRAPER" });
+      }
+    });
+    sessionTranscript = [];
+    console.log("[Background] Recording discarded, no upload");
+    return;
+  }
+
   // Handle Recording Stop
   if (msg.type === "STOP_RECORDING") {
     console.log("[Background] Stopping recording for:", msg.meetingId);
