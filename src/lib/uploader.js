@@ -5,7 +5,9 @@ import {
   updateMeetingStatus,
 } from "./db";
 
-const BACKEND_URL = "http://127.0.0.1:3001/api";
+// Try localhost first (Chrome extensions prefer this over 127.0.0.1)
+const BACKEND_URL = "http://localhost:3001/api";
+const FALLBACK_URL = "http://127.0.0.1:3001/api";
 
 export async function uploadMeetingData(tempMeetingId, meetingName) {
   try {
@@ -52,17 +54,32 @@ export async function uploadMeetingData(tempMeetingId, meetingName) {
     console.log("  - name:", meetingName);
     console.log("  - transcript entries:", transcript.length);
 
-    // 3. Upload
+    // 3. Upload (with fallback)
     console.log("[Uploader] Initiating fetch request...");
-    const response = await fetch(`${BACKEND_URL}/upload`, {
-      method: "POST",
-      body: formData,
-      headers: {
-        "x-api-key": "my-secret-extension-key",
-      },
-    });
+    let response;
+    let uploadUrl = `${BACKEND_URL}/upload`;
 
-    console.log("[Uploader] Response received - Status:", response.status, response.statusText);
+    try {
+      response = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "x-api-key": "my-secret-extension-key",
+        },
+      });
+      console.log("[Uploader] Response received - Status:", response.status, response.statusText);
+    } catch (primaryError) {
+      console.warn("[Uploader] Primary URL failed, trying fallback:", primaryError.message);
+      uploadUrl = `${FALLBACK_URL}/upload`;
+      response = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "x-api-key": "my-secret-extension-key",
+        },
+      });
+      console.log("[Uploader] Fallback response received - Status:", response.status, response.statusText);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

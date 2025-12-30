@@ -14,13 +14,30 @@ async function hasOffscreenDocument() {
   return false;
 }
 
+async function closeOffscreenDocument() {
+  try {
+    const exists = await hasOffscreenDocument();
+    if (exists) {
+      console.log("[Background] Closing existing offscreen document");
+      await chrome.offscreen.closeDocument();
+      console.log("[Background] Offscreen document closed");
+    }
+  } catch (err) {
+    console.warn("[Background] Error closing offscreen document:", err);
+  }
+}
+
 async function setupOffscreenDocument(path) {
-  const exists = await hasOffscreenDocument();
-  if (exists) return;
+  // Always close existing offscreen document first to ensure clean state
+  await closeOffscreenDocument();
+
+  // Small delay to ensure cleanup completes
+  await new Promise(resolve => setTimeout(resolve, 100));
 
   if (creating) {
     await creating;
   } else {
+    console.log("[Background] Creating new offscreen document");
     creating = chrome.offscreen.createDocument({
       url: path,
       reasons: ["AUDIO_PLAYBACK", "USER_MEDIA"],
@@ -28,6 +45,7 @@ async function setupOffscreenDocument(path) {
     });
     await creating;
     creating = null;
+    console.log("[Background] Offscreen document created");
   }
 }
 
@@ -103,7 +121,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     console.log("[Background] Temp ID:", msg.tempMeetingId);
     console.log("[Background] Transcript entries collected:", sessionTranscript.length);
 
+    // Stop recording in offscreen document
     chrome.runtime.sendMessage({ target: "offscreen", type: "STOP_RECORDING" });
+
+    // Close offscreen document after a delay to ensure recording stops
+    setTimeout(() => {
+      closeOffscreenDocument().catch(err =>
+        console.warn("[Background] Failed to close offscreen on stop:", err)
+      );
+    }, 500);
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
         console.log("[Background] Stopping scraper on tab:", tabs[0].id);
