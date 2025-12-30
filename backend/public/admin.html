@@ -79,6 +79,7 @@
         .stats-bar {
             display: flex;
             gap: 24px;
+            align-items: center;
         }
 
         .stat-item {
@@ -97,6 +98,49 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-top: 4px;
+        }
+
+        /* Toggle Button */
+        .toggle-trash-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .toggle-trash-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .toggle-trash-btn.active {
+            background: var(--accent-gradient);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        .toggle-trash-btn .badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
         }
 
         /* Main Container */
@@ -477,67 +521,73 @@
                     <div class="stat-value" id="total-meetings">0</div>
                     <div class="stat-label">Total Meetings</div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="deleted-count">0</div>
-                    <div class="stat-label">Recently Deleted</div>
-                </div>
+                <button class="toggle-trash-btn" id="trash-toggle" onclick="toggleDeletedView()" title="View Deleted">
+                    <i class="fas fa-trash"></i>
+                    <span class="badge" id="deleted-badge" style="display: none;">0</span>
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Main Container -->
     <div class="container">
-        <!-- Active Meetings Section -->
+        <!-- Section Header -->
         <div class="section-header">
-            <div class="icon"><i class="fas fa-video"></i></div>
-            <h2>Active Meetings</h2>
+            <div class="icon" id="section-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <h2 id="section-title">Recordings & Summaries</h2>
         </div>
+
+        <!-- Meetings List -->
         <div id="meetings-list">
             <div class="loading">
                 <div class="spinner"></div>
                 <p style="color: var(--text-secondary);">Loading meetings...</p>
             </div>
         </div>
-
-        <!-- Recently Deleted Section -->
-        <div class="section-header">
-            <div class="icon"><i class="fas fa-trash"></i></div>
-            <h2>Recently Deleted</h2>
-        </div>
-        <div id="deleted-list">
-            <div class="empty-state">
-                <i class="fas fa-check-circle"></i>
-                <h3>No deleted meetings</h3>
-                <p>Deleted meetings will appear here and auto-delete after 30 days</p>
-            </div>
-        </div>
     </div>
 
     <script>
         const API_BASE = 'http://localhost:3001/api';
+        let allMeetings = [];
+        let showingDeleted = false;
 
         // Fetch and render meetings
         async function loadMeetings() {
             try {
                 const response = await fetch(`${API_BASE}/meetings`);
-                const data = await response.json();
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
                 console.log('[Admin] Loaded meetings:', data);
 
+                // Handle both formats: { meetings: [...] } or direct array
+                allMeetings = Array.isArray(data) ? data : (data.meetings || []);
+
                 // Separate active and deleted
-                const active = data.meetings.filter(m => !m.deleted_at);
-                const deleted = data.meetings.filter(m => m.deleted_at);
+                const active = allMeetings.filter(m => !m.deleted_at);
+                const deleted = allMeetings.filter(m => m.deleted_at);
 
                 // Update stats
                 document.getElementById('total-meetings').textContent = active.length;
-                document.getElementById('deleted-count').textContent = deleted.length;
 
-                // Render active meetings
-                renderMeetings(active, 'meetings-list', false);
-
-                // Render deleted meetings
+                const deletedBadge = document.getElementById('deleted-badge');
                 if (deleted.length > 0) {
-                    renderMeetings(deleted, 'deleted-list', true);
+                    deletedBadge.textContent = deleted.length;
+                    deletedBadge.style.display = 'block';
+                } else {
+                    deletedBadge.style.display = 'none';
+                }
+
+                // Render based on current view
+                if (showingDeleted) {
+                    renderMeetings(deleted, true);
+                } else {
+                    renderMeetings(active, false);
                 }
             } catch (error) {
                 console.error('[Admin] Error loading meetings:', error);
@@ -546,21 +596,46 @@
                         <i class="fas fa-exclamation-triangle"></i>
                         <h3>Error loading meetings</h3>
                         <p>${error.message}</p>
+                        <p style="margin-top: 12px; font-size: 12px;">Make sure backend is running on http://localhost:3001</p>
                     </div>
                 `;
             }
         }
 
+        // Toggle between active and deleted view
+        function toggleDeletedView() {
+            showingDeleted = !showingDeleted;
+
+            const toggleBtn = document.getElementById('trash-toggle');
+            const sectionTitle = document.getElementById('section-title');
+            const sectionIcon = document.getElementById('section-icon');
+
+            if (showingDeleted) {
+                toggleBtn.classList.add('active');
+                sectionTitle.textContent = 'Recently Deleted';
+                sectionIcon.innerHTML = '<i class="fas fa-trash"></i>';
+            } else {
+                toggleBtn.classList.remove('active');
+                sectionTitle.textContent = 'Recordings & Summaries';
+                sectionIcon.innerHTML = '<i class="fas fa-video"></i>';
+            }
+
+            // Re-render current view
+            const active = allMeetings.filter(m => !m.deleted_at);
+            const deleted = allMeetings.filter(m => m.deleted_at);
+            renderMeetings(showingDeleted ? deleted : active, showingDeleted);
+        }
+
         // Render meetings list
-        function renderMeetings(meetings, containerId, isDeleted) {
-            const container = document.getElementById(containerId);
+        function renderMeetings(meetings, isDeleted) {
+            const container = document.getElementById('meetings-list');
 
             if (meetings.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <h3>No meetings yet</h3>
-                        <p>Start recording to see your meetings here</p>
+                        <i class="fas fa-${isDeleted ? 'check-circle' : 'inbox'}"></i>
+                        <h3>${isDeleted ? 'No deleted meetings' : 'No meetings yet'}</h3>
+                        <p>${isDeleted ? 'Deleted meetings will appear here and auto-delete after 30 days' : 'Start recording to see your meetings here'}</p>
                     </div>
                 `;
                 return;
