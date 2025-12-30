@@ -828,41 +828,138 @@
         }
 
         function formatNotionContent(text) {
-            return text
-                // Headers
-                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            if (!text) return '';
 
-                // Bold and italic
+            let formatted = text;
+
+            // Code blocks (process first to protect from other replacements)
+            formatted = formatted.replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+
+            // Tables (Markdown format)
+            formatted = formatted.replace(/^\|(.+)\|$/gm, (match) => {
+                return match; // Mark for later processing
+            });
+
+            // Process tables
+            const lines = formatted.split('\n');
+            let inTable = false;
+            let tableRows = [];
+            let result = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                // Check if line is a table row
+                if (line.startsWith('|') && line.endsWith('|')) {
+                    const cells = line.slice(1, -1).split('|').map(c => c.trim());
+
+                    // Skip separator rows (|---|---|)
+                    if (cells.every(c => /^[-:]+$/.test(c))) {
+                        continue;
+                    }
+
+                    if (!inTable) {
+                        inTable = true;
+                        tableRows = [];
+                    }
+                    tableRows.push(cells);
+                } else {
+                    // End of table
+                    if (inTable) {
+                        result.push(buildTable(tableRows));
+                        tableRows = [];
+                        inTable = false;
+                    }
+                    result.push(line);
+                }
+            }
+
+            // Handle table at end of content
+            if (inTable && tableRows.length > 0) {
+                result.push(buildTable(tableRows));
+            }
+
+            formatted = result.join('\n');
+
+            // Headers
+            formatted = formatted
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+            // Bold and italic (process in order: bold+italic, bold, italic)
+            formatted = formatted
                 .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>');
 
-                // Checkboxes
-                .replace(/^- \[ \] (.+)$/gm, '<li class="checkbox-item"><input type="checkbox" disabled> $1</li>')
-                .replace(/^- \[x\] (.+)$/gm, '<li class="checkbox-item"><input type="checkbox" checked disabled> $1</li>')
+            // Checkboxes
+            formatted = formatted
+                .replace(/^- \[x\] (.+)$/gm, '___CHECKBOX_CHECKED___$1___END_CHECKBOX___')
+                .replace(/^- \[ \] (.+)$/gm, '___CHECKBOX_UNCHECKED___$1___END_CHECKBOX___');
 
-                // Lists
-                .replace(/^- (?!\[)(.+)$/gm, '<li>$1</li>')
-                .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+            // Regular lists
+            formatted = formatted
+                .replace(/^- (?!\[)(.+)$/gm, '___LIST_ITEM___$1___END_LIST___')
+                .replace(/^(\d+)\. (.+)$/gm, '___LIST_ITEM___$2___END_LIST___');
 
-                // Wrap checkbox lists
-                .replace(/((?:<li class="checkbox-item">.*?<\/li>\n?)+)/g, '<ul class="checklist">$1</ul>')
+            // Blockquotes
+            formatted = formatted.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
 
-                // Wrap regular lists
-                .replace(/((?:<li>(?!class).*?<\/li>\n?)+)/g, '<ul>$1</ul>')
+            // Inline code
+            formatted = formatted.replace(/`(.+?)`/g, '<code>$1</code>');
 
-                // Blockquotes
-                .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+            // Process list items
+            formatted = formatted
+                .replace(/___CHECKBOX_CHECKED___(.+?)___END_CHECKBOX___/g, '<li class="checkbox-item"><input type="checkbox" checked disabled> $1</li>')
+                .replace(/___CHECKBOX_UNCHECKED___(.+?)___END_CHECKBOX___/g, '<li class="checkbox-item"><input type="checkbox" disabled> $1</li>')
+                .replace(/___LIST_ITEM___(.+?)___END_LIST___/g, '<li>$1</li>');
 
-                // Code blocks
-                .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code class="language-$1">$2</code></pre>')
-                .replace(/`(.+?)`/g, '<code>$1</code>')
+            // Wrap lists (improved logic)
+            formatted = formatted.replace(/((?:<li class="checkbox-item">.*?<\/li>\s*)+)/g, '<ul class="checklist">$1</ul>');
+            formatted = formatted.replace(/((?:<li>.*?<\/li>\s*)+)/g, (match) => {
+                // Don't wrap if already wrapped
+                if (match.startsWith('<ul')) return match;
+                return '<ul>' + match + '</ul>';
+            });
 
-                // Line breaks
+            // Line breaks
+            formatted = formatted
                 .replace(/\n\n/g, '<br><br>')
                 .replace(/\n/g, ' ');
+
+            return formatted;
+        }
+
+        function buildTable(rows) {
+            if (rows.length === 0) return '';
+
+            let html = '<table>';
+
+            // First row is header
+            if (rows.length > 0) {
+                html += '<thead><tr>';
+                rows[0].forEach(cell => {
+                    html += `<th>${cell}</th>`;
+                });
+                html += '</tr></thead>';
+            }
+
+            // Remaining rows are body
+            if (rows.length > 1) {
+                html += '<tbody>';
+                for (let i = 1; i < rows.length; i++) {
+                    html += '<tr>';
+                    rows[i].forEach(cell => {
+                        html += `<td>${cell}</td>`;
+                    });
+                    html += '</tr>';
+                }
+                html += '</tbody>';
+            }
+
+            html += '</table>';
+            return html;
         }
 
         function extractTopic(text) {
