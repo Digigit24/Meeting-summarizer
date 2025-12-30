@@ -67,14 +67,66 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         return { success: false, error: "No active tab" };
       }
 
+      // Validate tab URL - must be on a supported meeting platform
+      const tabUrl = tab.url || "";
+      console.log("[Background] Current tab URL:", tabUrl);
+
+      const isSupportedSite =
+        tabUrl.includes("meet.google.com") ||
+        tabUrl.includes("zoom.us") ||
+        tabUrl.includes("teams.microsoft.com");
+
+      if (!isSupportedSite) {
+        console.error("[Background] ❌ ERROR: Not on a supported meeting platform!");
+        console.error("[Background] Current URL:", tabUrl);
+        console.error("[Background] Please navigate to Google Meet, Zoom, or Teams");
+        return {
+          success: false,
+          error: "Please open a Google Meet, Zoom, or Microsoft Teams meeting first!"
+        };
+      }
+
+      // Check for Chrome internal pages
+      if (tabUrl.startsWith("chrome://") || tabUrl.startsWith("chrome-extension://")) {
+        console.error("[Background] ❌ ERROR: Cannot capture Chrome internal pages!");
+        return {
+          success: false,
+          error: "Cannot record from Chrome internal pages. Please go to a meeting."
+        };
+      }
+
       await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
 
-      // Get Stream ID targeting the Active Tab
-      const streamId = await new Promise((resolve) => {
+      // Get Stream ID targeting the Active Tab (with proper error handling)
+      const streamId = await new Promise((resolve, reject) => {
         chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id }, (id) => {
+          // Check for errors
+          if (chrome.runtime.lastError) {
+            console.error("[Background] ❌ Tab capture error:", chrome.runtime.lastError.message);
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+
+          // Check if ID is valid
+          if (!id) {
+            console.error("[Background] ❌ ERROR: No stream ID returned!");
+            reject(new Error("Failed to get stream ID. Make sure you're on an active meeting."));
+            return;
+          }
+
+          console.log("[Background] ✅ Got streamId:", id);
           resolve(id);
         });
       });
+
+      if (!streamId) {
+        console.error("[Background] ❌ ERROR: Stream ID is undefined!");
+        return {
+          success: false,
+          error: "Failed to capture tab. Please refresh the meeting page and try again."
+        };
+      }
+
       console.log("[Background] Got streamId:", streamId);
 
       chrome.runtime.sendMessage({
@@ -96,7 +148,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sessionTranscript = [];
       return { success: true };
     };
-    handleStart().then(sendResponse);
+    handleStart()
+      .then(sendResponse)
+      .catch((error) => {
+        console.error("[Background] ❌ Recording start failed:", error);
+        sendResponse({
+          success: false,
+          error: error.message || "Failed to start recording. Please try again."
+        });
+      });
     return true;
   }
 

@@ -8,6 +8,7 @@ export default function Popup() {
   const [pendingUploads, setPendingUploads] = useState(false);
   const [view, setView] = useState('record'); // 'record' | 'history'
   const [uploadStatus, setUploadStatus] = useState('idle'); // idle, uploading, success, error
+  const [errorMessage, setErrorMessage] = useState(''); // Error message to display
 
   useEffect(() => {
     // Listener for live updates
@@ -34,25 +35,33 @@ export default function Popup() {
     return () => chrome.runtime.onMessage.removeListener(messageListener);
   }, []);
 
-  // ... (toggleRecording kept same) ...
   const toggleRecording = async () => {
     if (recording) {
       setRecording(false);
+      setErrorMessage(''); // Clear any errors
       chrome.runtime.sendMessage({ type: 'STOP_RECORDING', meetingId: meetingName }); // Pass ID/Name
       chrome.storage.local.set({ recording: false });
     } else {
       const name = meetingName || `Meeting_${new Date().toISOString()}`;
       setRecording(true);
+      setErrorMessage(''); // Clear any previous errors
       chrome.storage.local.set({ recording: true, meetingName: name });
-      
-      chrome.runtime.sendMessage({ 
-        type: 'START_RECORDING', 
-        meetingName: name 
+
+      chrome.runtime.sendMessage({
+        type: 'START_RECORDING',
+        meetingName: name
       }, (response) => {
           if (!response || !response.success) {
               setRecording(false);
               chrome.storage.local.set({ recording: false });
-              console.log("Failed start");
+
+              // Show error message to user
+              const error = response?.error || "Failed to start recording. Make sure you're on a Google Meet call!";
+              setErrorMessage(error);
+              console.error("[Popup] Recording failed:", error);
+
+              // Clear error after 10 seconds
+              setTimeout(() => setErrorMessage(''), 10000);
           }
       });
     }
@@ -96,6 +105,12 @@ export default function Popup() {
             </h1>
 
             {/* Status Feedback */}
+            {errorMessage && (
+                <div className="w-full mb-4 bg-red-500/20 text-red-300 text-xs px-3 py-2 rounded border border-red-500/40">
+                    <div className="font-semibold mb-1">❌ Error</div>
+                    <div>{errorMessage}</div>
+                </div>
+            )}
             {uploadStatus === 'uploading' && (
                 <div className="w-full mb-4 bg-blue-500/20 text-blue-300 text-xs px-3 py-2 rounded flex items-center justify-center animate-pulse border border-blue-500/40">
                     <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mr-2"></div>
