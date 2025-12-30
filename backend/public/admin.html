@@ -1,886 +1,944 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeetSync AI - Admin Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetSync AI - Intelligence Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #111111;
-            --bg-tertiary: #1a1a1a;
-            --accent-primary: #6366f1;
-            --accent-secondary: #8b5cf6;
-            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --text-primary: #ffffff;
-            --text-secondary: #a1a1aa;
-            --text-tertiary: #71717a;
-            --border-color: #27272a;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --separator: #27272a;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 24px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header h1 i {
-            -webkit-text-fill-color: var(--accent-primary);
-        }
-
-        .stats-bar {
-            display: flex;
-            gap: 24px;
-            align-items: center;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
-        }
-
-        /* Toggle Button */
-        .toggle-trash-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .toggle-trash-btn:hover {
-            background: var(--bg-primary);
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-        }
-
-        .toggle-trash-btn.active {
-            background: var(--accent-gradient);
-            border-color: var(--accent-primary);
-            color: white;
-        }
-
-        .toggle-trash-btn .badge {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: var(--danger);
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 18px;
-            text-align: center;
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 32px;
-        }
-
-        /* Section Headers */
-        .section-header {
-            margin: 48px 0 24px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .section-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .section-header .icon {
-            width: 32px;
-            height: 32px;
-            background: var(--accent-gradient);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-
-        /* Meeting Timeline Item */
-        .meeting-item {
-            position: relative;
-            padding: 32px 0;
-            border-bottom: 1px solid var(--separator);
-        }
-
-        .meeting-item:last-child {
-            border-bottom: none;
-        }
-
-        .meeting-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 4px;
-            height: 60%;
-            background: var(--accent-gradient);
-            border-radius: 2px;
-            transform: translateY(-50%);
-        }
-
-        .meeting-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            padding-left: 24px;
-        }
-
-        .meeting-title-section {
-            flex: 1;
-        }
-
-        .meeting-title {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .meeting-title i {
-            font-size: 18px;
-            color: var(--accent-primary);
-        }
-
-        .meeting-meta {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: var(--text-tertiary);
-        }
-
-        .meta-item i {
-            font-size: 12px;
-            color: var(--accent-secondary);
-        }
-
-        .meeting-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn {
-            padding: 10px 18px;
-            border-radius: 8px;
-            border: none;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-delete {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-delete:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: var(--danger);
-        }
-
-        .btn-restore {
-            background: var(--accent-gradient);
-            color: white;
-        }
-
-        .btn-restore:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
-        .btn-play {
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--accent-primary);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-        }
-
-        .btn-play:hover {
-            background: rgba(99, 102, 241, 0.2);
-        }
-
-        /* Content Sections */
-        .meeting-content {
-            padding-left: 24px;
-        }
-
-        .content-block {
-            margin-bottom: 24px;
-        }
-
-        .block-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .block-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .block-title i {
-            font-size: 14px;
-            color: var(--accent-secondary);
-        }
-
-        .expand-icon {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            transition: transform 0.2s ease;
-        }
-
-        .expand-icon.expanded {
-            transform: rotate(180deg);
-        }
-
-        .block-content {
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: 20px;
-            font-size: 14px;
-            line-height: 1.8;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-
-        .block-content.collapsed {
-            max-height: 3.6em;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .block-content.collapsed::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: linear-gradient(to bottom, transparent, var(--bg-tertiary));
-        }
-
-        /* Audio Player */
-        .audio-player {
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid var(--border-color);
-        }
-
-        .audio-player audio {
-            width: 100%;
-            height: 48px;
-            outline: none;
-        }
-
-        /* Summary Rendering */
-        .summary-content h1, .summary-content h2, .summary-content h3 {
-            color: var(--text-primary);
-            margin-top: 24px;
-            margin-bottom: 12px;
-        }
-
-        .summary-content h1 {
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .summary-content h2 {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .summary-content h3 {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .summary-content ul, .summary-content ol {
-            margin-left: 24px;
-            margin-top: 8px;
-        }
-
-        .summary-content li {
-            margin-bottom: 8px;
-        }
-
-        .summary-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-        }
-
-        .summary-content th, .summary-content td {
-            padding: 12px;
-            text-align: left;
-            border: 1px solid var(--border-color);
-        }
-
-        .summary-content th {
-            background: var(--bg-secondary);
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .summary-content strong {
-            color: var(--accent-primary);
-            font-weight: 600;
-        }
-
-        .summary-content code {
-            background: var(--bg-secondary);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            color: var(--text-tertiary);
-        }
-
-        .empty-state i {
-            font-size: 64px;
-            color: var(--text-tertiary);
-            margin-bottom: 20px;
-        }
-
-        .empty-state h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-        }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--accent-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .stats-bar {
-                width: 100%;
-                justify-content: space-around;
-            }
-
-            .meeting-header {
-                flex-direction: column;
-                gap: 16px;
-            }
-
-            .meeting-actions {
-                width: 100%;
-            }
-
-            .btn {
-                flex: 1;
-            }
-        }
+      :root {
+        --bg-base: #020617;
+        --bg-surface: #0f172a;
+        --bg-elevated: #1e293b;
+        --accent-primary: #818cf8;
+        --accent-secondary: #c084fc;
+        --accent-glow: rgba(129, 140, 248, 0.15);
+        --text-vibrant: #f8fafc;
+        --text-muted: #94a3b8;
+        --text-dim: #64748b;
+        --border-subtle: rgba(255, 255, 255, 0.05);
+        --border-glow: rgba(129, 140, 248, 0.3);
+        --danger: #f43f5e;
+        --success: #10b981;
+        --gradient-nebula: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+        --font-main: "Outfit", sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--font-main);
+        background: var(--bg-base);
+        color: var(--text-vibrant);
+        line-height: 1.5;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Abstract Background Decor */
+      .nebula-glow {
+        position: fixed;
+        top: -10%;
+        right: -10%;
+        width: 50%;
+        height: 50%;
+        background: radial-gradient(
+          circle,
+          var(--accent-glow) 0%,
+          transparent 70%
+        );
+        z-index: -1;
+        filter: blur(100px);
+      }
+
+      /* Header */
+      header {
+        padding: 40px 0;
+        border-bottom: 1px solid var(--border-subtle);
+        background: rgba(2, 6, 23, 0.8);
+        backdrop-filter: blur(20px);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .header-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .brand-logo {
+        width: 48px;
+        height: 48px;
+        background: var(--gradient-nebula);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 0 25px var(--accent-glow);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .brand-logo::after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          45deg,
+          transparent 45%,
+          rgba(255, 255, 255, 0.4) 50%,
+          transparent 55%
+        );
+        animation: shine 3s infinite;
+      }
+
+      @keyframes shine {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .brand-text h1 {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        background: var(--gradient-nebula);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .brand-text span {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-dim);
+        font-weight: 600;
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+      }
+
+      .nav-link {
+        text-decoration: none;
+        color: var(--text-muted);
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        color: var(--accent-primary);
+      }
+
+      .nav-link.trash-link {
+        padding: 10px 18px;
+        background: rgba(244, 63, 94, 0.1);
+        border: 1px solid rgba(244, 63, 94, 0.2);
+        border-radius: 12px;
+        color: var(--danger);
+      }
+
+      .nav-link.trash-link:hover {
+        background: rgba(244, 63, 94, 0.2);
+      }
+
+      .nav-link.trash-link.active {
+        background: var(--danger);
+        color: white;
+      }
+
+      .trash-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+      }
+
+      /* Stats */
+      .stats-grid {
+        display: flex;
+        gap: 40px;
+      }
+
+      .stat-node {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .stat-node .val {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-vibrant);
+        font-family: var(--font-mono);
+      }
+
+      .stat-node .lbl {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-dim);
+      }
+
+      /* Layout */
+      main {
+        max-width: 1200px;
+        margin: 60px auto;
+        padding: 0 40px;
+      }
+
+      .section-intro {
+        margin-bottom: 60px;
+      }
+
+      .section-intro h2 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .section-intro p {
+        color: var(--text-muted);
+        font-size: 16px;
+      }
+
+      /* Timeline Items - No Cards */
+      .timeline {
+        position: relative;
+      }
+
+      .meeting-entry {
+        position: relative;
+        padding: 60px 0;
+        border-top: 1px solid var(--border-subtle);
+        transition: all 0.4s ease;
+      }
+
+      .meeting-entry:first-child {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      .meeting-entry:hover {
+        background: rgba(129, 140, 248, 0.02);
+      }
+
+      .meeting-main {
+        display: grid;
+        grid-template-columns: 350px 1fr auto;
+        gap: 40px;
+        align-items: start;
+      }
+
+      .meeting-info h4 {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--accent-primary);
+        margin-bottom: 12px;
+        font-weight: 700;
+      }
+
+      .meeting-info h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-vibrant);
+        margin-bottom: 16px;
+      }
+
+      .meeting-meta-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .meta-tag {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+      }
+
+      .meta-tag i {
+        width: 16px;
+        color: var(--text-dim);
+      }
+
+      .meeting-controls {
+        display: flex;
+        gap: 16px;
+      }
+
+      /* Action Buttons */
+      .action-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .action-btn:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        background: rgba(129, 140, 248, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .action-btn.delete-btn:hover {
+        border-color: var(--danger);
+        color: var(--danger);
+        background: rgba(244, 63, 94, 0.1);
+      }
+
+      .action-btn.restore-btn {
+        width: auto;
+        padding: 0 20px;
+        background: var(--gradient-nebula);
+        color: white;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        gap: 8px;
+      }
+
+      /* Disclosure / Dropdown */
+      .meeting-intelligence {
+        grid-column: 1 / -1;
+        margin-top: 32px;
+      }
+
+      .intel-summary {
+        margin-bottom: 24px;
+      }
+
+      .intel-summary p {
+        color: var(--text-muted);
+        font-size: 15px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.6;
+      }
+
+      .intel-summary.active p {
+        -webkit-line-clamp: unset;
+      }
+
+      .intel-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--accent-primary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 12px 0;
+        transition: gap 0.3s ease;
+      }
+
+      .intel-toggle:hover {
+        gap: 12px;
+      }
+
+      .intel-toggle i {
+        font-size: 12px;
+        transition: transform 0.3s ease;
+      }
+
+      .intel-toggle.active i {
+        transform: rotate(180deg);
+      }
+
+      .intel-expanded {
+        display: none;
+        padding-top: 40px;
+        border-top: 1px dashed var(--border-subtle);
+        animation: slideFade 0.4s ease-out;
+      }
+
+      .intel-expanded.active {
+        display: block;
+      }
+
+      @keyframes slideFade {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .grid-blocks {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+
+      .intel-block {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid var(--border-subtle);
+        border-radius: 20px;
+        padding: 32px;
+      }
+
+      .intel-block h5 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-dim);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .intel-block h5 i {
+        color: var(--accent-secondary);
+      }
+
+      .scroll-box {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 16px;
+        font-size: 15px;
+        color: var(--text-muted);
+        line-height: 1.7;
+      }
+
+      .scroll-box::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .scroll-box::-webkit-scrollbar-thumb {
+        background: var(--border-subtle);
+        border-radius: 10px;
+      }
+
+      /* Summary Styling */
+      .markdown-body h1,
+      .markdown-body h2 {
+        font-size: 20px;
+        color: var(--text-vibrant);
+        margin: 24px 0 12px;
+      }
+      .markdown-body h3 {
+        font-size: 16px;
+        color: var(--accent-primary);
+        margin: 20px 0 10px;
+      }
+      .markdown-body ul {
+        padding-left: 20px;
+        margin-bottom: 20px;
+      }
+      .markdown-body li {
+        margin-bottom: 8px;
+      }
+      .markdown-body strong {
+        color: var(--accent-secondary);
+      }
+
+      /* Audio Player Modern */
+      .audio-wrapper {
+        margin-bottom: 32px;
+        background: var(--bg-surface);
+        border-radius: 16px;
+        padding: 12px;
+        border: 1px solid var(--border-subtle);
+      }
+
+      audio {
+        width: 100%;
+        height: 40px;
+        filter: invert(100%) hue-rotate(180deg) brightness(1.5);
+      }
+
+      /* Empty & Loading States */
+      .status-hero {
+        text-align: center;
+        padding: 120px 0;
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
+      .status-hero i {
+        font-size: 80px;
+        background: var(--gradient-nebula);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 32px;
+        opacity: 0.5;
+      }
+
+      .status-hero h3 {
+        font-size: 24px;
+        margin-bottom: 16px;
+      }
+
+      .status-hero p {
+        color: var(--text-muted);
+      }
+
+      .shimmer {
+        height: 200px;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.05) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 20px;
+        margin-bottom: 40px;
+      }
+
+      @keyframes loading {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .meeting-main {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        .grid-blocks {
+          grid-template-columns: 1fr;
+        }
+        .meeting-entry {
+          padding: 40px 0;
+        }
+        .nav-actions {
+          gap: 16px;
+        }
+        .stats-grid {
+          display: none;
+        }
+      }
     </style>
-</head>
-<body>
-    <!-- Header -->
-    <div class="header">
-        <div class="header-content">
-            <h1>
-                <i class="fas fa-robot"></i>
-                MeetSync AI Dashboard
-            </h1>
-            <div class="stats-bar">
-                <div class="stat-item">
-                    <div class="stat-value" id="total-meetings">0</div>
-                    <div class="stat-label">Total Meetings</div>
-                </div>
-                <button class="toggle-trash-btn" id="trash-toggle" onclick="toggleDeletedView()" title="View Deleted">
-                    <i class="fas fa-trash"></i>
-                    <span class="badge" id="deleted-badge" style="display: none;">0</span>
-                </button>
-            </div>
-        </div>
-    </div>
+  </head>
+  <body>
+    <div class="nebula-glow"></div>
 
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Section Header -->
-        <div class="section-header">
-            <div class="icon" id="section-icon">
-                <i class="fas fa-video"></i>
-            </div>
-            <h2 id="section-title">Recordings & Summaries</h2>
+    <header>
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-logo">
+            <i class="fas fa-infinity"></i>
+          </div>
+          <div class="brand-text">
+            <span>Admin Central</span>
+            <h1>MeetSync AI</h1>
+          </div>
         </div>
 
-        <!-- Meetings List -->
-        <div id="meetings-list">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p style="color: var(--text-secondary);">Loading meetings...</p>
+        <div class="nav-actions">
+          <div class="stats-grid">
+            <div class="stat-node">
+              <span class="val" id="total-meetings">00</span>
+              <span class="lbl">Active Intel</span>
             </div>
+          </div>
+
+          <a class="nav-link active" id="active-nav" onclick="setView(false)">
+            <i class="fas fa-bolt"></i> Activity
+          </a>
+
+          <a class="nav-link trash-link" id="trash-nav" onclick="setView(true)">
+            <i class="fas fa-trash-alt"></i> Archived
+            <span class="trash-count" id="deleted-badge" style="display: none"
+              >0</span
+            >
+          </a>
         </div>
-    </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="section-intro">
+        <h2 id="view-title">Intelligence Feed</h2>
+        <p id="view-desc">
+          Live matrix of processed meeting intelligence and neural summaries.
+        </p>
+      </div>
+
+      <div id="meetings-list">
+        <div class="shimmer"></div>
+        <div class="shimmer"></div>
+        <div class="shimmer"></div>
+      </div>
+    </main>
 
     <script>
-        const API_BASE = 'http://localhost:3001/api';
-        let allMeetings = [];
-        let showingDeleted = false;
+      const API_BASE = "http://localhost:3001/api";
+      const API_KEY = "my-secret-extension-key";
 
-        // Fetch and render meetings
-        async function loadMeetings() {
-            try {
-                const response = await fetch(`${API_BASE}/meetings`);
+      const AUTH_HEADER = { "x-api-key": API_KEY };
+      const JSON_HEADERS = { ...AUTH_HEADER, Accept: "application/json" };
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+      let allMeetings = [];
+      let showingDeleted = false;
 
-                const data = await response.json();
-                console.log('[Admin] Loaded meetings:', data);
+      async function loadMeetings() {
+        try {
+          const response = await fetch(`${API_BASE}/meetings`, {
+            headers: JSON_HEADERS,
+          });
+          if (!response.ok) throw new Error(`Pulse lost: ${response.status}`);
 
-                // Handle both formats: { meetings: [...] } or direct array
-                allMeetings = Array.isArray(data) ? data : (data.meetings || []);
+          const data = await response.json();
+          allMeetings = Array.isArray(data) ? data : data.meetings || [];
 
-                // Separate active and deleted
-                const active = allMeetings.filter(m => !m.deleted_at);
-                const deleted = allMeetings.filter(m => m.deleted_at);
+          const active = allMeetings.filter((m) => !m.deleted_at);
+          const deleted = allMeetings.filter((m) => m.deleted_at);
 
-                // Update stats
-                document.getElementById('total-meetings').textContent = active.length;
+          document.getElementById("total-meetings").textContent = active.length
+            .toString()
+            .padStart(2, "0");
 
-                const deletedBadge = document.getElementById('deleted-badge');
-                if (deleted.length > 0) {
-                    deletedBadge.textContent = deleted.length;
-                    deletedBadge.style.display = 'block';
-                } else {
-                    deletedBadge.style.display = 'none';
-                }
+          const badge = document.getElementById("deleted-badge");
+          if (deleted.length > 0) {
+            badge.textContent = deleted.length;
+            badge.style.display = "inline-block";
+          } else {
+            badge.style.display = "none";
+          }
 
-                // Render based on current view
-                if (showingDeleted) {
-                    renderMeetings(deleted, true);
-                } else {
-                    renderMeetings(active, false);
-                }
-            } catch (error) {
-                console.error('[Admin] Error loading meetings:', error);
-                document.getElementById('meetings-list').innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <h3>Error loading meetings</h3>
-                        <p>${error.message}</p>
-                        <p style="margin-top: 12px; font-size: 12px;">Make sure backend is running on http://localhost:3001</p>
+          renderMeetings(showingDeleted ? deleted : active);
+        } catch (error) {
+          showError(error.message);
+        }
+      }
+
+      function setView(isDeleted) {
+        showingDeleted = isDeleted;
+        document
+          .getElementById("active-nav")
+          .classList.toggle("active", !isDeleted);
+        document
+          .getElementById("trash-nav")
+          .classList.toggle("active", isDeleted);
+
+        document.getElementById("view-title").textContent = isDeleted
+          ? "Recently Deleted"
+          : "Intelligence Feed";
+        document.getElementById("view-desc").textContent = isDeleted
+          ? "Archived intelligence pending auto-purge in 30 days."
+          : "Live matrix of processed meeting intelligence and neural summaries.";
+
+        const filtered = allMeetings.filter((m) =>
+          isDeleted ? m.deleted_at : !m.deleted_at
+        );
+        renderMeetings(filtered);
+      }
+
+      function renderMeetings(meetings) {
+        const container = document.getElementById("meetings-list");
+
+        if (meetings.length === 0) {
+          container.innerHTML = `
+                    <div class="status-hero">
+                        <i class="fas fa-ghost"></i>
+                        <h3>Matrix Empty</h3>
+                        <p>No intelligence packets found in this sector.</p>
                     </div>
                 `;
-            }
+          return;
         }
 
-        // Toggle between active and deleted view
-        function toggleDeletedView() {
-            showingDeleted = !showingDeleted;
+        container.innerHTML = meetings
+          .map((m) => {
+            const date = new Date(m.created_at);
+            const timeStr = date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const dateStr = date.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
 
-            const toggleBtn = document.getElementById('trash-toggle');
-            const sectionTitle = document.getElementById('section-title');
-            const sectionIcon = document.getElementById('section-icon');
-
-            if (showingDeleted) {
-                toggleBtn.classList.add('active');
-                sectionTitle.textContent = 'Recently Deleted';
-                sectionIcon.innerHTML = '<i class="fas fa-trash"></i>';
-            } else {
-                toggleBtn.classList.remove('active');
-                sectionTitle.textContent = 'Recordings & Summaries';
-                sectionIcon.innerHTML = '<i class="fas fa-video"></i>';
+            let autoPurge = "";
+            if (showingDeleted && m.deleted_at) {
+              const delDate = new Date(m.deleted_at);
+              const purgeDate = new Date(
+                delDate.getTime() + 30 * 24 * 60 * 60 * 1000
+              );
+              const diff = Math.ceil(
+                (purgeDate - new Date()) / (1000 * 3600 * 24)
+              );
+              autoPurge = `<div class="meta-tag" style="color: var(--danger)"><i class="fas fa-biohazard"></i> Purge in ${diff}d</div>`;
             }
 
-            // Re-render current view
-            const active = allMeetings.filter(m => !m.deleted_at);
-            const deleted = allMeetings.filter(m => m.deleted_at);
-            renderMeetings(showingDeleted ? deleted : active, showingDeleted);
-        }
+            const duration = m.duration
+              ? `${Math.floor(m.duration / 60)}m ${m.duration % 60}s`
+              : "--:--";
 
-        // Render meetings list
-        function renderMeetings(meetings, isDeleted) {
-            const container = document.getElementById('meetings-list');
-
-            if (meetings.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-${isDeleted ? 'check-circle' : 'inbox'}"></i>
-                        <h3>${isDeleted ? 'No deleted meetings' : 'No meetings yet'}</h3>
-                        <p>${isDeleted ? 'Deleted meetings will appear here and auto-delete after 30 days' : 'Start recording to see your meetings here'}</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = meetings.map(meeting => {
-                const date = new Date(meeting.created_at);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'short', day: 'numeric'
-                });
-                const formattedTime = date.toLocaleTimeString('en-US', {
-                    hour: '2-digit', minute: '2-digit'
-                });
-
-                // Calculate days until auto-delete (30 days from deleted_at)
-                let autoDeleteInfo = '';
-                if (isDeleted && meeting.deleted_at) {
-                    const deletedDate = new Date(meeting.deleted_at);
-                    const deleteAfter = new Date(deletedDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-                    const daysLeft = Math.ceil((deleteAfter - new Date()) / (1000 * 60 * 60 * 24));
-                    autoDeleteInfo = `<div class="meta-item"><i class="fas fa-clock"></i>Auto-deletes in ${daysLeft} days</div>`;
-                }
-
-                const duration = meeting.duration ? `${Math.floor(meeting.duration / 60)}m ${meeting.duration % 60}s` : 'N/A';
-                const wordCount = meeting.transcription_words || 0;
-
-                return `
-                    <div class="meeting-item">
-                        <div class="meeting-header">
-                            <div class="meeting-title-section">
-                                <h4 class="meeting-title">
-                                    <i class="fas fa-circle-dot"></i>
-                                    ${meeting.name || 'Untitled Meeting'}
-                                </h4>
-                                <div class="meeting-meta">
-                                    <div class="meta-item">
-                                        <i class="fas fa-calendar"></i>
-                                        ${formattedDate}
-                                    </div>
-                                    <div class="meta-item">
-                                        <i class="fas fa-clock"></i>
-                                        ${formattedTime}
-                                    </div>
-                                    <div class="meta-item">
-                                        <i class="fas fa-stopwatch"></i>
-                                        ${duration}
-                                    </div>
-                                    <div class="meta-item">
-                                        <i class="fas fa-text-width"></i>
-                                        ${wordCount} words
-                                    </div>
-                                    ${autoDeleteInfo}
+            return `
+                    <div class="meeting-entry">
+                        <div class="meeting-main">
+                            <div class="meeting-info">
+                                <h4>Meeting Intelligence</h4>
+                                <h3>${m.name || "Untitled Segment"}</h3>
+                                <div class="meeting-meta-list">
+                                    <div class="meta-tag"><i class="fas fa-calendar-day"></i> ${dateStr} at ${timeStr}</div>
+                                    <div class="meta-tag"><i class="fas fa-hourglass-half"></i> ${duration} Duration</div>
+                                    <div class="meta-tag"><i class="fas fa-quote-left"></i> ${
+                                      m.transcription_words || 0
+                                    } vocabulary count</div>
+                                    ${autoPurge}
                                 </div>
                             </div>
-                            <div class="meeting-actions">
-                                ${isDeleted ? `
-                                    <button class="btn btn-restore" onclick="restoreMeeting('${meeting.id}')">
-                                        <i class="fas fa-undo"></i>
-                                        Restore
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-play" onclick="toggleAudio('${meeting.id}')">
-                                        <i class="fas fa-play"></i>
-                                        Play
-                                    </button>
-                                    <button class="btn btn-delete" onclick="deleteMeeting('${meeting.id}')">
-                                        <i class="fas fa-trash"></i>
-                                        Delete
-                                    </button>
-                                `}
-                            </div>
-                        </div>
 
-                        <div class="meeting-content">
-                            ${renderAudioPlayer(meeting)}
-                            ${renderCaptions(meeting)}
-                            ${renderTranscription(meeting)}
-                            ${renderSummary(meeting)}
+                            <div class="meeting-intelligence">
+                                <div class="intel-summary" id="sum-text-${
+                                  m.id
+                                }">
+                                    <p>${
+                                      m.summary
+                                        ? stripHtml(formatSummary(m.summary))
+                                        : "Intelligence extraction pending..."
+                                    }</p>
+                                </div>
+                                <div class="intel-toggle" onclick="toggleDetails('${
+                                  m.id
+                                }')" id="toggle-${m.id}">
+                                    <span>Expand Intelligence Matrix</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                
+                                <div class="intel-expanded" id="details-${
+                                  m.id
+                                }">
+                                    ${
+                                      m.s3_url
+                                        ? `
+                                        <div class="audio-wrapper" id="audio-container-${m.id}">
+                                            <div class="intel-toggle" onclick="loadAudio('${m.id}')" id="audio-load-${m.id}" style="justify-content: center; background: rgba(6, 182, 212, 0.1); border-radius: 12px;">
+                                                <i class="fas fa-play"></i> <span>Load Secure Audio Stream</span>
+                                            </div>
+                                        </div>
+                                    `
+                                        : ""
+                                    }
+                                    
+                                    <div class="grid-blocks">
+                                        <div class="intel-block">
+                                            <h5><i class="fas fa-terminal"></i> Neural Summary</h5>
+                                            <div class="scroll-box markdown-body">
+                                                ${
+                                                  m.summary
+                                                    ? formatSummary(m.summary)
+                                                    : "No summary available."
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="intel-block">
+                                            <h5><i class="fas fa-wave-square"></i> Raw Transcript</h5>
+                                            <div class="scroll-box">
+                                                ${
+                                                  m.elevenlabs_transcript ||
+                                                  m.client_transcript ||
+                                                  "Audio signal not transcribed."
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="meeting-controls">
+                                ${
+                                  showingDeleted
+                                    ? `
+                                    <button class="action-btn restore-btn" onclick="restoreMeeting('${m.id}')">
+                                        <i class="fas fa-rotate-left"></i> Restore Intel
+                                    </button>
+                                `
+                                    : `
+                                    <button class="action-btn" title="Download Audio" onclick="downloadAudio('${
+                                      m.id
+                                    }', '${m.name || "meeting"}')">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="action-btn delete-btn" title="Archive Intel" onclick="deleteMeeting('${
+                                      m.id
+                                    }')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                `
+                                }
+                            </div>
                         </div>
                     </div>
                 `;
-            }).join('');
+          })
+          .join("");
+      }
+
+      function toggleDetails(id) {
+        const details = document.getElementById(`details-${id}`);
+        const toggle = document.getElementById(`toggle-${id}`);
+        const preview = document.getElementById(`sum-text-${id}`);
+
+        const isActive = details.classList.toggle("active");
+        toggle.classList.toggle("active");
+        preview.classList.toggle("active");
+
+        toggle.querySelector("span").textContent = isActive
+          ? "Collapse Intelligence"
+          : "Expand Intelligence Matrix";
+      }
+
+      function formatSummary(text) {
+        return text
+          .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+          .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+          .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/^- (.+)$/gm, "<li>$1</li>")
+          .replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>")
+          .replace(/\n\n/g, "<br>");
+      }
+
+      function stripHtml(html) {
+        let tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+      }
+
+      async function deleteMeeting(id) {
+        if (!confirm("Archive this intelligence segment?")) return;
+        try {
+          const res = await fetch(`${API_BASE}/meetings/${id}`, {
+            method: "DELETE",
+            headers: JSON_HEADERS,
+          });
+          if (res.ok) loadMeetings();
+        } catch (e) {
+          alert("Purge failed");
         }
+      }
 
-        // Render audio player
-        function renderAudioPlayer(meeting) {
-            if (!meeting.s3_url) return '';
+      async function restoreMeeting(id) {
+        try {
+          const res = await fetch(`${API_BASE}/meetings/${id}/restore`, {
+            method: "POST",
+            headers: JSON_HEADERS,
+          });
+          if (res.ok) loadMeetings();
+        } catch (e) {
+          alert("Restoration failed");
+        }
+      }
 
-            const audioUrl = `/api/audio/${meeting.id}`;
+      async function loadAudio(id) {
+        const container = document.getElementById(`audio-container-${id}`);
+        container.innerHTML = `<div class="intel-toggle" style="justify-content: center; opacity: 0.5;"><i class="fas fa-spinner fa-spin"></i> <span>Decrypting Stream...</span></div>`;
 
-            return `
-                <div class="content-block">
-                    <div class="block-header">
-                        <div class="block-title">
-                            <i class="fas fa-volume-up"></i>
-                            Recording
-                        </div>
-                    </div>
-                    <div class="audio-player">
-                        <audio id="audio-${meeting.id}" controls>
-                            <source src="${audioUrl}" type="audio/webm">
-                            <source src="${meeting.s3_url}" type="audio/webm">
-                            Your browser does not support audio playback.
-                        </audio>
-                    </div>
+        try {
+          const res = await fetch(`${API_BASE}/audio/${id}`, {
+            headers: AUTH_HEADER,
+          });
+          if (!res.ok) throw new Error("Stream denied");
+
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          container.innerHTML = `<audio controls src="${url}" autoplay style="width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(1.5);"></audio>`;
+        } catch (e) {
+          container.innerHTML = `<div class="intel-toggle" style="justify-content: center; color: var(--danger);"><i class="fas fa-exclamation-circle"></i> <span>Stream Failed: ${e.message}</span></div>`;
+        }
+      }
+
+      async function downloadAudio(id, name) {
+        try {
+          const res = await fetch(`${API_BASE}/audio/${id}`, {
+            headers: AUTH_HEADER,
+          });
+          if (!res.ok) throw new Error("Download denied");
+
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${name.replace(/\s+/g, "_")}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          alert(`Download failed: ${e.message}`);
+        }
+      }
+
+      function showError(msg) {
+        document.getElementById("meetings-list").innerHTML = `
+                <div class="status-hero">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <h3>Connectivity Lost</h3>
+                    <p>${msg}</p>
                 </div>
             `;
-        }
+      }
 
-        // Render captions (collapsed by default)
-        function renderCaptions(meeting) {
-            if (!meeting.client_transcript) return '';
-
-            return `
-                <div class="content-block">
-                    <div class="block-header" onclick="toggleContent('captions-${meeting.id}')">
-                        <div class="block-title">
-                            <i class="fas fa-closed-captioning"></i>
-                            Meeting Captions
-                        </div>
-                        <i class="fas fa-chevron-down expand-icon" id="captions-${meeting.id}-icon"></i>
-                    </div>
-                    <div class="block-content collapsed" id="captions-${meeting.id}">
-                        ${meeting.client_transcript}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Render transcription (collapsed by default)
-        function renderTranscription(meeting) {
-            if (!meeting.elevenlabs_transcript) return '';
-
-            return `
-                <div class="content-block">
-                    <div class="block-header" onclick="toggleContent('transcript-${meeting.id}')">
-                        <div class="block-title">
-                            <i class="fas fa-file-alt"></i>
-                            ElevenLabs Transcription
-                        </div>
-                        <i class="fas fa-chevron-down expand-icon" id="transcript-${meeting.id}-icon"></i>
-                    </div>
-                    <div class="block-content collapsed" id="transcript-${meeting.id}">
-                        ${meeting.elevenlabs_transcript}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Render summary (expanded by default)
-        function renderSummary(meeting) {
-            if (!meeting.summary) return '';
-
-            // Parse markdown-style summary
-            const formattedSummary = formatSummary(meeting.summary);
-
-            return `
-                <div class="content-block">
-                    <div class="block-header" onclick="toggleContent('summary-${meeting.id}')">
-                        <div class="block-title">
-                            <i class="fas fa-sparkles"></i>
-                            AI Summary
-                        </div>
-                        <i class="fas fa-chevron-up expand-icon expanded" id="summary-${meeting.id}-icon"></i>
-                    </div>
-                    <div class="block-content summary-content" id="summary-${meeting.id}">
-                        ${formattedSummary}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Format summary with basic markdown parsing
-        function formatSummary(text) {
-            return text
-                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/^- (.+)$/gm, '<li>$1</li>')
-                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-                .replace(/\n\n/g, '<br><br>');
-        }
-
-        // Toggle content expansion
-        function toggleContent(id) {
-            const content = document.getElementById(id);
-            const icon = document.getElementById(id + '-icon');
-
-            content.classList.toggle('collapsed');
-            icon.classList.toggle('expanded');
-        }
-
-        // Delete meeting
-        async function deleteMeeting(id) {
-            if (!confirm('Are you sure you want to delete this meeting? It will be moved to Recently Deleted.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/meetings/${id}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    await loadMeetings();
-                } else {
-                    alert('Failed to delete meeting');
-                }
-            } catch (error) {
-                console.error('[Admin] Error deleting meeting:', error);
-                alert('Error deleting meeting');
-            }
-        }
-
-        // Restore meeting
-        async function restoreMeeting(id) {
-            try {
-                const response = await fetch(`${API_BASE}/meetings/${id}/restore`, {
-                    method: 'POST'
-                });
-
-                if (response.ok) {
-                    await loadMeetings();
-                } else {
-                    alert('Failed to restore meeting');
-                }
-            } catch (error) {
-                console.error('[Admin] Error restoring meeting:', error);
-                alert('Error restoring meeting');
-            }
-        }
-
-        // Toggle audio playback
-        function toggleAudio(id) {
-            const audio = document.getElementById(`audio-${id}`);
-            if (audio.paused) {
-                audio.play();
-            } else {
-                audio.pause();
-            }
-        }
-
-        // Initialize
-        loadMeetings();
+      loadMeetings();
     </script>
-</body>
+  </body>
 </html>
