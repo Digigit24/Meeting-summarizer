@@ -25,7 +25,6 @@ if (!window.meetSyncWidgetInjected) {
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
           padding: 12px 16px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          cursor: move;
           user-select: none;
           transition: box-shadow 0.2s ease;
           min-width: 140px;
@@ -51,13 +50,14 @@ if (!window.meetSyncWidgetInjected) {
           height: 36px;
           border-radius: 50%;
           border: none;
-          cursor: pointer;
+          cursor: pointer !important;
           font-size: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.2s ease;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          pointer-events: auto;
         }
 
         .meetsync-record-btn.idle {
@@ -161,12 +161,12 @@ if (!window.meetSyncWidgetInjected) {
 
         .meetsync-modal-buttons {
           display: flex;
-          gap: 12px;
+          gap: 8px;
         }
 
         .meetsync-modal-btn {
           flex: 1;
-          padding: 12px;
+          padding: 12px 16px;
           border: none;
           border-radius: 8px;
           font-size: 14px;
@@ -193,6 +193,18 @@ if (!window.meetSyncWidgetInjected) {
         .meetsync-modal-btn.secondary:hover {
           background: #e2e8f0;
         }
+
+        .meetsync-modal-btn.danger {
+          background: #fee2e2;
+          color: #dc2626;
+          border: 1px solid #fca5a5;
+        }
+
+        .meetsync-modal-btn.danger:hover {
+          background: #fca5a5;
+          color: white;
+          transform: translateY(-2px);
+        }
       </style>
 
       <div class="meetsync-widget-content">
@@ -217,6 +229,7 @@ if (!window.meetSyncWidgetInjected) {
           />
           <div class="meetsync-modal-hint">Leave blank for default: Meeting - [Date Time]</div>
           <div class="meetsync-modal-buttons">
+            <button class="meetsync-modal-btn danger" id="meetsync-discard-btn">Discard</button>
             <button class="meetsync-modal-btn secondary" id="meetsync-cancel-btn">Cancel</button>
             <button class="meetsync-modal-btn primary" id="meetsync-save-btn">Save & Upload</button>
           </div>
@@ -257,9 +270,15 @@ if (!window.meetSyncWidgetInjected) {
     const nameInput = widget.querySelector('#meetsync-meeting-name');
     const saveBtn = widget.querySelector('#meetsync-save-btn');
     const cancelBtn = widget.querySelector('#meetsync-cancel-btn');
+    const discardBtn = widget.querySelector('#meetsync-discard-btn');
 
-    // Record button click
+    // Record button click - prevent any drag interference
+    recordBtn.addEventListener('mousedown', (e) => {
+      e.stopPropagation(); // Stop drag from starting
+    });
+
     recordBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       if (isRecording) {
         // Stop recording - show name modal
@@ -285,11 +304,26 @@ if (!window.meetSyncWidgetInjected) {
       updateRecordingUI(true);
     });
 
-    // Dragging
-    widget.addEventListener('mousedown', dragStart);
+    // Discard with double confirmation
+    discardBtn.addEventListener('click', () => {
+      if (confirm('⚠️ Are you sure you want to discard this recording? This action cannot be undone.')) {
+        if (confirm('⚠️ Final confirmation: Delete this recording permanently?')) {
+          hideNameModal();
+          discardRecording();
+        }
+      }
+    });
+
+    // Dragging - only from the text/status area, not the button
+    const statusArea = widget.querySelector('.meetsync-widget-content > div');
+    if (statusArea) {
+      statusArea.addEventListener('mousedown', dragStart);
+      statusArea.addEventListener('touchstart', dragStart);
+      statusArea.style.cursor = 'move';
+    }
+
     document.addEventListener('mousemove', drag);
     document.addEventListener('mouseup', dragEnd);
-    widget.addEventListener('touchstart', dragStart);
     document.addEventListener('touchmove', drag);
     document.addEventListener('touchend', dragEnd);
   }
@@ -297,14 +331,17 @@ if (!window.meetSyncWidgetInjected) {
   // Start Recording
   function startRecording() {
     const startTime = Date.now();
+    const tempId = `temp_${startTime}`;
+
     chrome.storage.local.set({
       recording: true,
-      recordingStartTime: startTime
+      recordingStartTime: startTime,
+      currentMeetingId: tempId  // Store the temp ID
     });
 
     chrome.runtime.sendMessage({
       type: 'START_RECORDING',
-      meetingName: `temp_${startTime}`
+      meetingName: tempId
     }, (response) => {
       if (response && response.success) {
         isRecording = true;
@@ -318,15 +355,43 @@ if (!window.meetSyncWidgetInjected) {
 
   // Stop Recording
   function stopRecording(meetingName) {
+    // Get the original temp ID
+    chrome.storage.local.get(['currentMeetingId'], (result) => {
+      const tempId = result.currentMeetingId;
+
+      chrome.storage.local.set({ recording: false });
+
+      chrome.runtime.sendMessage({
+        type: 'STOP_RECORDING',
+        meetingId: meetingName,
+        tempMeetingId: tempId  // Pass both IDs
+      });
+
+      isRecording = false;
+      updateRecordingUI(false);
+    });
+  }
+
+  // Discard Recording
+  function discardRecording() {
     chrome.storage.local.set({ recording: false });
 
     chrome.runtime.sendMessage({
-      type: 'STOP_RECORDING',
-      meetingId: meetingName
+      type: 'DISCARD_RECORDING'
     });
 
     isRecording = false;
     updateRecordingUI(false);
+
+    // Show notification
+    const status = document.getElementById('meetsync-status');
+    const originalText = status.textContent;
+    status.textContent = 'Discarded';
+    status.style.color = '#dc2626';
+    setTimeout(() => {
+      status.textContent = originalText;
+      status.style.color = '';
+    }, 2000);
   }
 
   // Show/Hide Name Modal
@@ -404,8 +469,8 @@ if (!window.meetSyncWidgetInjected) {
   function dragStart(e) {
     const widget = document.getElementById('meetsync-floating-widget');
 
-    // Don't drag if clicking button
-    if (e.target.closest('.meetsync-record-btn')) {
+    // Explicitly prevent dragging from button
+    if (e.target.closest('.meetsync-record-btn') || e.target.closest('button')) {
       return;
     }
 

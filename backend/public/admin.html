@@ -101,6 +101,18 @@
         justify-content: center;
         font-size: 24px;
         box-shadow: 0 0 30px var(--accent-glow);
+        animation: logo-shine 3s infinite alternate;
+      }
+
+      @keyframes logo-shine {
+        from {
+          box-shadow: 0 0 20px var(--accent-glow);
+          transform: scale(1);
+        }
+        to {
+          box-shadow: 0 0 40px rgba(129, 140, 248, 0.4);
+          transform: scale(1.02);
+        }
       }
 
       .brand-text h1 {
@@ -203,7 +215,7 @@
         font-size: 17px;
       }
 
-      /* Meeting Entry - Larger, Better Separated */
+      /* Meeting Entry */
       .meeting-entry {
         position: relative;
         padding: 60px 0;
@@ -219,7 +231,6 @@
         background: rgba(129, 140, 248, 0.03);
       }
 
-      /* Meeting Header with Topic */
       .meeting-topic {
         display: inline-block;
         font-size: 13px;
@@ -285,6 +296,8 @@
         font-weight: 600;
         transition: all 0.3s ease;
         font-family: var(--font-main);
+        overflow: hidden;
+        position: relative;
       }
 
       .action-btn:hover {
@@ -310,7 +323,7 @@
         opacity: 0.9;
       }
 
-      /* Intelligence Sections - 3 Distinct Blocks */
+      /* Intelligence Sections */
       .intelligence-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -371,24 +384,17 @@
         font-size: 16px;
         line-height: 1.8;
         color: var(--text-muted);
-        max-height: 600px;
-        overflow-y: auto;
+        max-height: 2000px;
+        overflow-y: hidden;
         padding-right: 12px;
-      }
-
-      .intel-content::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .intel-content::-webkit-scrollbar-thumb {
-        background: var(--border-subtle);
-        border-radius: 10px;
+        transition: max-height 0.5s ease-in-out, opacity 0.3s ease;
       }
 
       .intel-content.collapsed {
         max-height: 120px;
         overflow: hidden;
         position: relative;
+        opacity: 0.8;
       }
 
       .intel-content.collapsed::after {
@@ -401,64 +407,66 @@
         background: linear-gradient(to bottom, transparent, var(--bg-surface));
       }
 
-      /* Notion-Style Formatting */
+      /* Audio Player Container */
+      .audio-player {
+        background: var(--bg-elevated);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 32px;
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      audio {
+        width: 100%;
+        height: 48px;
+        border-radius: 12px;
+        filter: invert(1) hue-rotate(180deg) brightness(1.5);
+      }
+
+      /* Notion-Style Content */
       .notion-content h1 {
         font-size: 28px;
         font-weight: 800;
         color: var(--text-vibrant);
         margin: 28px 0 16px;
-        line-height: 1.3;
       }
-
       .notion-content h2 {
         font-size: 24px;
         font-weight: 700;
         color: var(--text-vibrant);
         margin: 24px 0 12px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
       }
-
       .notion-content h3 {
         font-size: 20px;
         font-weight: 600;
         color: var(--accent-primary);
         margin: 20px 0 10px;
       }
-
       .notion-content ul,
       .notion-content ol {
         padding-left: 24px;
         margin: 16px 0;
       }
-
       .notion-content li {
         margin-bottom: 10px;
         line-height: 1.7;
       }
-
       .notion-content strong {
         color: var(--accent-secondary);
         font-weight: 600;
       }
-
-      .notion-content em {
-        color: var(--accent-primary);
-        font-style: italic;
-      }
-
       .notion-content blockquote {
         border-left: 4px solid var(--accent-primary);
-        padding-left: 20px;
+        padding: 16px 20px;
         margin: 20px 0;
         color: var(--text-muted);
         font-style: italic;
         background: rgba(129, 140, 248, 0.05);
-        padding: 16px 20px;
         border-radius: 8px;
       }
-
       .notion-content code {
         background: var(--bg-elevated);
         color: var(--accent-primary);
@@ -468,89 +476,13 @@
         font-size: 14px;
       }
 
-      .notion-content pre {
-        background: var(--bg-elevated);
-        padding: 20px;
-        border-radius: 12px;
-        overflow-x: auto;
-        margin: 20px 0;
-        border: 1px solid var(--border-subtle);
-      }
-
-      .notion-content pre code {
-        background: none;
-        padding: 0;
-      }
-
-      .notion-content table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 24px 0;
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      .notion-content th,
-      .notion-content td {
-        padding: 14px;
-        text-align: left;
-        border: 1px solid var(--border-subtle);
-      }
-
-      .notion-content th {
-        background: var(--bg-elevated);
-        font-weight: 600;
-        color: var(--text-vibrant);
-        font-size: 15px;
-      }
-
-      .notion-content td {
-        background: rgba(15, 23, 42, 0.4);
-      }
-
-      /* Checkboxes */
-      .notion-content .checklist {
-        list-style: none;
-        padding-left: 0;
-      }
-
-      .notion-content .checklist li {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 0;
-      }
-
-      .notion-content .checklist input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-        accent-color: var(--accent-primary);
-      }
-
-      /* Audio Player */
-      .audio-player {
-        background: var(--bg-elevated);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 32px;
-        border: 1px solid var(--border-subtle);
-      }
-
-      audio {
-        width: 100%;
-        height: 48px;
-        border-radius: 12px;
-      }
-
-      /* Empty State */
+      /* Status UI */
       .status-hero {
         text-align: center;
         padding: 120px 0;
         max-width: 600px;
         margin: 0 auto;
       }
-
       .status-hero i {
         font-size: 100px;
         background: var(--gradient-nebula);
@@ -559,20 +491,13 @@
         margin-bottom: 32px;
         opacity: 0.6;
       }
-
       .status-hero h3 {
         font-size: 28px;
         margin-bottom: 16px;
         font-weight: 700;
       }
 
-      .status-hero p {
-        color: var(--text-muted);
-        font-size: 17px;
-      }
-
-      /* Loading */
-      .shimmer {
+      .loading-shimmer {
         height: 300px;
         background: linear-gradient(
           90deg,
@@ -592,23 +517,6 @@
         }
         100% {
           background-position: -200% 0;
-        }
-      }
-
-      /* Responsive */
-      @media (max-width: 1024px) {
-        .header-inner,
-        main {
-          padding: 0 24px;
-        }
-        .meeting-title {
-          font-size: 26px;
-        }
-        .notion-content h1 {
-          font-size: 24px;
-        }
-        .notion-content h2 {
-          font-size: 20px;
         }
       }
     </style>
@@ -658,8 +566,8 @@
       </div>
 
       <div id="meetings-list">
-        <div class="shimmer"></div>
-        <div class="shimmer"></div>
+        <div class="loading-shimmer"></div>
+        <div class="loading-shimmer"></div>
       </div>
     </main>
 
@@ -679,7 +587,7 @@
             headers: JSON_HEADERS,
           });
           if (!response.ok)
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Access Denied: ${response.status}`);
 
           const data = await response.json();
           allMeetings = Array.isArray(data) ? data : data.meetings || [];
@@ -690,7 +598,6 @@
           document.getElementById("total-meetings").textContent = active.length
             .toString()
             .padStart(2, "0");
-
           const badge = document.getElementById("deleted-badge");
           if (deleted.length > 0) {
             badge.textContent = deleted.length;
@@ -701,7 +608,7 @@
 
           renderMeetings(showingDeleted ? deleted : active);
         } catch (error) {
-          console.error("[Admin] Error loading meetings:", error);
+          console.error("[Admin] Load Fail:", error);
           showError(error.message);
         }
       }
@@ -714,35 +621,25 @@
         document
           .getElementById("trash-nav")
           .classList.toggle("active", isDeleted);
-
         document.getElementById("view-title").textContent = isDeleted
           ? "Recently Deleted"
           : "Intelligence Feed";
         document.getElementById("view-desc").textContent = isDeleted
-          ? "Archived intelligence pending auto-purge in 30 days."
+          ? "Archived intelligence segments pending automatic purging."
           : "Live stream of processed meeting intelligence with AI-powered neural summaries.";
-
-        const filtered = allMeetings.filter((m) =>
-          isDeleted ? m.deleted_at : !m.deleted_at
+        renderMeetings(
+          allMeetings.filter((m) => (isDeleted ? m.deleted_at : !m.deleted_at))
         );
-        renderMeetings(filtered);
       }
 
       function renderMeetings(meetings) {
         const container = document.getElementById("meetings-list");
-
         if (meetings.length === 0) {
-          container.innerHTML = `
-                    <div class="status-hero">
-                        <i class="fas fa-ghost"></i>
-                        <h3>No Intelligence Found</h3>
-                        <p>${
-                          showingDeleted
-                            ? "No archived meetings at the moment."
-                            : "Start recording to populate your intelligence feed."
-                        }</p>
-                    </div>
-                `;
+          container.innerHTML = `<div class="status-hero"><i class="fas fa-ghost"></i><h3>No Intelligence Found</h3><p>${
+            showingDeleted
+              ? "No archived meetings at the moment."
+              : "Start recording to populate your intelligence feed."
+          }</p></div>`;
           return;
         }
 
@@ -758,384 +655,179 @@
               day: "numeric",
               year: "numeric",
             });
-
-            let autoPurge = "";
-            if (showingDeleted && m.deleted_at) {
-              const delDate = new Date(m.deleted_at);
-              const purgeDate = new Date(
-                delDate.getTime() + 30 * 24 * 60 * 60 * 1000
-              );
-              const diff = Math.ceil(
-                (purgeDate - new Date()) / (1000 * 3600 * 24)
-              );
-              autoPurge = `<div class="meta-tag" style="color: var(--danger)"><i class="fas fa-clock"></i> Auto-purge in ${diff} days</div>`;
-            }
-
             const duration = m.duration
               ? `${Math.floor(m.duration / 60)}m ${m.duration % 60}s`
               : "N/A";
             const topic = extractTopic(m.summary || m.name);
 
             return `
-                    <div class="meeting-entry">
-                        <div class="meeting-topic">${topic}</div>
-                        <h2 class="meeting-title">${
-                          m.name || "Untitled Meeting"
-                        }</h2>
-
-                        <div class="meeting-meta-row">
-                            <div class="meta-tag"><i class="fas fa-calendar"></i> ${dateStr}</div>
-                            <div class="meta-tag"><i class="fas fa-clock"></i> ${timeStr}</div>
-                            <div class="meta-tag"><i class="fas fa-stopwatch"></i> ${duration}</div>
-                            <div class="meta-tag"><i class="fas fa-quote-left"></i> ${
-                              m.transcription_words || 0
-                            } words</div>
-                            ${autoPurge}
-                        </div>
-
-                        <div class="meeting-actions">
-                            ${
-                              showingDeleted
-                                ? `
-                                <button class="action-btn restore-btn" onclick="restoreMeeting('${m.id}')">
-                                    <i class="fas fa-rotate-left"></i> Restore
-                                </button>
-                            `
-                                : `
-                                <button class="action-btn" onclick="playAudio('${m.id}')">
-                                    <i class="fas fa-play"></i> Play Recording
-                                </button>
-                                <button class="action-btn delete-btn" onclick="deleteMeeting('${m.id}')">
-                                    <i class="fas fa-trash-alt"></i> Archive
-                                </button>
-                            `
-                            }
-                        </div>
-
-                        ${renderAudioPlayer(m)}
-
-                        <div class="intelligence-grid">
-                            ${renderCaptionsSection(m)}
-                            ${renderSummarySection(m)}
-                            ${renderTranscriptionSection(m)}
-                        </div>
-                    </div>
-                `;
+            <div class="meeting-entry">
+              <div class="meeting-topic">${topic}</div>
+              <h2 class="meeting-title">${
+                m.name || "Untitled Intelligence"
+              }</h2>
+              <div class="meeting-meta-row">
+                <div class="meta-tag"><i class="fas fa-calendar"></i> ${dateStr}</div>
+                <div class="meta-tag"><i class="fas fa-clock"></i> ${timeStr}</div>
+                <div class="meta-tag"><i class="fas fa-stopwatch"></i> ${duration}</div>
+                <div class="meta-tag"><i class="fas fa-quote-left"></i> ${
+                  m.transcription_words || 0
+                } words</div>
+              </div>
+              <div class="meeting-actions">
+                ${
+                  showingDeleted
+                    ? `
+                  <button class="action-btn restore-btn" onclick="restoreMeeting('${m.id}')"><i class="fas fa-rotate-left"></i> Restore</button>
+                `
+                    : `
+                  <div class="action-btn" onclick="loadSecureAudio('${m.id}')" id="audio-btn-${m.id}"><i class="fas fa-play"></i> Decrypt & Play Secure Stream</div>
+                  <button class="action-btn" onclick="downloadAudio('${m.id}')"><i class="fas fa-download"></i> Download WebM</button>
+                  <button class="action-btn delete-btn" onclick="deleteMeeting('${m.id}')"><i class="fas fa-trash-alt"></i> Archive</button>
+                `
+                }
+              </div>
+              <div class="audio-player" id="audio-container-${
+                m.id
+              }" style="display: none;"></div>
+              <div class="intelligence-grid">
+                ${renderIntelSection(
+                  "AI Summary",
+                  "sparkles",
+                  m.summary,
+                  `summary-${m.id}`,
+                  true
+                )}
+                ${renderIntelSection(
+                  "Transcription Matrix",
+                  "wave-square",
+                  m.elevenlabs_transcript,
+                  `transcript-${m.id}`,
+                  false
+                )}
+                ${renderIntelSection(
+                  "Meeting Captions",
+                  "closed-captioning",
+                  m.client_transcript,
+                  `captions-${m.id}`,
+                  false
+                )}
+              </div>
+            </div>
+          `;
           })
           .join("");
       }
 
-      function renderAudioPlayer(m) {
-        if (!m.s3_url) return "";
+      function renderIntelSection(title, icon, content, id, expanded) {
+        if (!content) return "";
+        const formattedContent = id.includes("summary")
+          ? formatNotionContent(content)
+          : content.replace(/\n/g, "<br>");
         return `
-                <div class="audio-player" id="audio-${m.id}">
-                    <div class="action-btn" onclick="loadSecureAudio('${m.id}')" id="audio-btn-${m.id}" style="justify-content: center; width: 100%;">
-                        <i class="fas fa-play"></i> Decrypt & Play Secure Stream
-                    </div>
-                </div>
-            `;
-      }
-
-      function renderCaptionsSection(m) {
-        if (!m.client_transcript) return "";
-        return `
-                <div class="intel-section">
-                    <div class="intel-header" onclick="toggleSection('captions-${m.id}')">
-                        <div class="intel-title">
-                            <i class="fas fa-closed-captioning"></i>
-                            <h3>Meeting Captions</h3>
-                        </div>
-                        <i class="fas fa-chevron-down expand-toggle" id="captions-${m.id}-toggle"></i>
-                    </div>
-                    <div class="intel-content collapsed" id="captions-${m.id}">
-                        ${m.client_transcript}
-                    </div>
-                </div>
-            `;
-      }
-
-      function renderSummarySection(m) {
-        if (!m.summary) return "";
-        return `
-                <div class="intel-section">
-                    <div class="intel-header" onclick="toggleSection('summary-${
-                      m.id
-                    }')">
-                        <div class="intel-title">
-                            <i class="fas fa-sparkles"></i>
-                            <h3>AI Summary</h3>
-                        </div>
-                        <i class="fas fa-chevron-up expand-toggle expanded" id="summary-${
-                          m.id
-                        }-toggle"></i>
-                    </div>
-                    <div class="intel-content notion-content" id="summary-${
-                      m.id
-                    }">
-                        ${formatNotionContent(m.summary)}
-                    </div>
-                </div>
-            `;
-      }
-
-      function renderTranscriptionSection(m) {
-        if (!m.elevenlabs_transcript) return "";
-        return `
-                <div class="intel-section">
-                    <div class="intel-header" onclick="toggleSection('transcript-${m.id}')">
-                        <div class="intel-title">
-                            <i class="fas fa-wave-square"></i>
-                            <h3>ElevenLabs Transcription</h3>
-                        </div>
-                        <i class="fas fa-chevron-down expand-toggle" id="transcript-${m.id}-toggle"></i>
-                    </div>
-                    <div class="intel-content collapsed" id="transcript-${m.id}">
-                        ${m.elevenlabs_transcript}
-                    </div>
-                </div>
-            `;
+          <div class="intel-section">
+            <div class="intel-header" onclick="toggleSection('${id}')">
+              <div class="intel-title"><i class="fas fa-${icon}"></i><h3>${title}</h3></div>
+              <i class="fas fa-chevron-down expand-toggle ${
+                expanded ? "expanded" : ""
+              }" id="${id}-toggle"></i>
+            </div>
+            <div class="intel-content ${
+              expanded ? "" : "collapsed"
+            }" id="${id}">${formattedContent}</div>
+          </div>
+        `;
       }
 
       function toggleSection(id) {
         const content = document.getElementById(id);
         const toggle = document.getElementById(id + "-toggle");
-
         content.classList.toggle("collapsed");
         toggle.classList.toggle("expanded");
       }
 
-      function formatNotionContent(text) {
-        if (!text) return "";
-
-        let formatted = text;
-
-        // Code blocks (process first to protect from other replacements)
-        formatted = formatted.replace(
-          /```(\w+)?\n([\s\S]+?)```/g,
-          '<pre><code class="language-$1">$2</code></pre>'
-        );
-
-        // Tables (Markdown format)
-        formatted = formatted.replace(/^\|(.+)\|$/gm, (match) => {
-          return match; // Mark for later processing
-        });
-
-        // Process tables
-        const lines = formatted.split("\n");
-        let inTable = false;
-        let tableRows = [];
-        let result = [];
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-
-          // Check if line is a table row
-          if (line.startsWith("|") && line.endsWith("|")) {
-            const cells = line
-              .slice(1, -1)
-              .split("|")
-              .map((c) => c.trim());
-
-            // Skip separator rows (|---|---|)
-            if (cells.every((c) => /^[-:]+$/.test(c))) {
-              continue;
-            }
-
-            if (!inTable) {
-              inTable = true;
-              tableRows = [];
-            }
-            tableRows.push(cells);
-          } else {
-            // End of table
-            if (inTable) {
-              result.push(buildTable(tableRows));
-              tableRows = [];
-              inTable = false;
-            }
-            result.push(line);
-          }
-        }
-
-        // Handle table at end of content
-        if (inTable && tableRows.length > 0) {
-          result.push(buildTable(tableRows));
-        }
-
-        formatted = result.join("\n");
-
-        // Headers
-        formatted = formatted
-          .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-          .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-          .replace(/^# (.+)$/gm, "<h1>$1</h1>");
-
-        // Bold and italic (process in order: bold+italic, bold, italic)
-        formatted = formatted
-          .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
-          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-          .replace(/\*(.+?)\*/g, "<em>$1</em>");
-
-        // Checkboxes
-        formatted = formatted
-          .replace(
-            /^- \[x\] (.+)$/gm,
-            "___CHECKBOX_CHECKED___$1___END_CHECKBOX___"
-          )
-          .replace(
-            /^- \[ \] (.+)$/gm,
-            "___CHECKBOX_UNCHECKED___$1___END_CHECKBOX___"
-          );
-
-        // Regular lists
-        formatted = formatted
-          .replace(/^- (?!\[)(.+)$/gm, "___LIST_ITEM___$1___END_LIST___")
-          .replace(/^(\d+)\. (.+)$/gm, "___LIST_ITEM___$2___END_LIST___");
-
-        // Blockquotes
-        formatted = formatted.replace(
-          /^> (.+)$/gm,
-          "<blockquote>$1</blockquote>"
-        );
-
-        // Inline code
-        formatted = formatted.replace(/`(.+?)`/g, "<code>$1</code>");
-
-        // Process list items
-        formatted = formatted
-          .replace(
-            /___CHECKBOX_CHECKED___(.+?)___END_CHECKBOX___/g,
-            '<li class="checkbox-item"><input type="checkbox" checked disabled> $1</li>'
-          )
-          .replace(
-            /___CHECKBOX_UNCHECKED___(.+?)___END_CHECKBOX___/g,
-            '<li class="checkbox-item"><input type="checkbox" disabled> $1</li>'
-          )
-          .replace(/___LIST_ITEM___(.+?)___END_LIST___/g, "<li>$1</li>");
-
-        // Wrap lists (improved logic)
-        formatted = formatted.replace(
-          /((?:<li class="checkbox-item">.*?<\/li>\s*)+)/g,
-          '<ul class="checklist">$1</ul>'
-        );
-        formatted = formatted.replace(/((?:<li>.*?<\/li>\s*)+)/g, (match) => {
-          // Don't wrap if already wrapped
-          if (match.startsWith("<ul")) return match;
-          return "<ul>" + match + "</ul>";
-        });
-
-        // Line breaks
-        formatted = formatted.replace(/\n\n/g, "<br><br>").replace(/\n/g, " ");
-
-        return formatted;
-      }
-
-      function buildTable(rows) {
-        if (rows.length === 0) return "";
-
-        let html = "<table>";
-
-        // First row is header
-        if (rows.length > 0) {
-          html += "<thead><tr>";
-          rows[0].forEach((cell) => {
-            html += `<th>${cell}</th>`;
-          });
-          html += "</tr></thead>";
-        }
-
-        // Remaining rows are body
-        if (rows.length > 1) {
-          html += "<tbody>";
-          for (let i = 1; i < rows.length; i++) {
-            html += "<tr>";
-            rows[i].forEach((cell) => {
-              html += `<td>${cell}</td>`;
-            });
-            html += "</tr>";
-          }
-          html += "</tbody>";
-        }
-
-        html += "</table>";
-        return html;
-      }
-
-      function extractTopic(text) {
-        if (!text) return "GENERAL MEETING";
-
-        // Try to extract topic from first line or title
-        const firstLine = text.split("\n")[0].replace(/[#*]/g, "").trim();
-        const words = firstLine.split(" ").slice(0, 5).join(" ");
-        return words.toUpperCase() || "MEETING NOTES";
-      }
-
       async function loadSecureAudio(id) {
         const btn = document.getElementById(`audio-btn-${id}`);
-        const container = document.getElementById(`audio-${id}`);
+        const container = document.getElementById(`audio-container-${id}`);
         btn.innerHTML =
           '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
-
         try {
           const res = await fetch(`${API_BASE}/audio/${id}`, {
             headers: AUTH_HEADER,
           });
           if (!res.ok) throw new Error("Access Denied");
-
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
-          container.innerHTML = `<audio controls src="${url}" autoplay style="width: 100%; filter: invert(1).brightness(1.5);"></audio>`;
+          container.innerHTML = `<audio controls src="${url}" autoplay></audio>`;
+          container.style.display = "flex";
+          btn.innerHTML = '<i class="fas fa-check"></i> Stream Decrypted';
         } catch (e) {
-          btn.innerHTML =
-            '<i class="fas fa-exclamation-circle"></i> Auth Failed';
-          alert("Audio authentication failed: " + e.message);
+          btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Auth Fail';
+          alert("Auth Fail: " + e.message);
+        }
+      }
+
+      async function downloadAudio(id) {
+        try {
+          const res = await fetch(`${API_BASE}/audio/${id}`, {
+            headers: AUTH_HEADER,
+          });
+          if (!res.ok) throw new Error("Access Denied");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `MeetSync_Audio_${id}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } catch (e) {
+          alert("Download Fail: " + e.message);
         }
       }
 
       async function deleteMeeting(id) {
-        if (
-          !confirm(
-            "Archive this meeting? It will be moved to Recently Deleted."
-          )
-        )
-          return;
-        try {
-          const res = await fetch(`${API_BASE}/meetings/${id}`, {
-            method: "DELETE",
-            headers: JSON_HEADERS,
-          });
-          if (res.ok) loadMeetings();
-          else alert("Failed to archive meeting");
-        } catch (e) {
-          alert("Error: " + e.message);
-        }
+        if (!confirm("Archive this segment?")) return;
+        const res = await fetch(`${API_BASE}/meetings/${id}`, {
+          method: "DELETE",
+          headers: JSON_HEADERS,
+        });
+        if (res.ok) loadMeetings();
       }
 
       async function restoreMeeting(id) {
-        try {
-          const res = await fetch(`${API_BASE}/meetings/${id}/restore`, {
-            method: "POST",
-            headers: JSON_HEADERS,
-          });
-          if (res.ok) loadMeetings();
-          else alert("Failed to restore meeting");
-        } catch (e) {
-          alert("Error: " + e.message);
-        }
+        const res = await fetch(`${API_BASE}/meetings/${id}/restore`, {
+          method: "POST",
+          headers: JSON_HEADERS,
+        });
+        if (res.ok) loadMeetings();
+      }
+
+      function formatNotionContent(text) {
+        if (!text) return "";
+        return text
+          .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+          .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+          .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/`(.+?)`/g, "<code>$1</code>")
+          .replace(/> (.+)$/gm, "<blockquote>$1</blockquote>")
+          .replace(/\n\n/g, "<br><br>")
+          .replace(/\n/g, " ");
+      }
+
+      function extractTopic(text) {
+        if (!text) return "GENERAL INTELLIGENCE";
+        const line = text.split("\n")[0].replace(/[#*]/g, "").trim();
+        return line.slice(0, 30).toUpperCase() || "TOPIC UNKNOWN";
       }
 
       function showError(msg) {
-        document.getElementById("meetings-list").innerHTML = `
-                <div class="status-hero">
-                    <i class="fas fa-triangle-exclamation"></i>
-                    <h3>Connection Lost</h3>
-                    <p>${msg}</p>
-                    <p style="margin-top: 12px; font-size: 15px;">Make sure backend is running on http://localhost:3001</p>
-                </div>
-            `;
+        document.getElementById(
+          "meetings-list"
+        ).innerHTML = `<div class="status-hero"><i class="fas fa-triangle-exclamation"></i><h3>Core Pulse Lost</h3><p>${msg}</p></div>`;
       }
 
-      // Initialize
       loadMeetings();
     </script>
   </body>
