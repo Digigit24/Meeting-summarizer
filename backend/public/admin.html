@@ -1,882 +1,920 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeetSync AI - Admin Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetSync AI - Intelligence Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
+        :root {
+            --bg-base: #020617;
+            --bg-surface: #0f172a;
+            --bg-elevated: #1e293b;
+            --accent-primary: #818cf8;
+            --accent-secondary: #c084fc;
+            --accent-glow: rgba(129, 140, 248, 0.15);
+            --text-vibrant: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-glow: rgba(129, 140, 248, 0.3);
+            --danger: #f43f5e;
+            --success: #10b981;
+            --warning: #fbbf24;
+            --gradient-nebula: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            --font-main: "Outfit", sans-serif;
+            --font-mono: "JetBrains Mono", monospace;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #111111;
-            --bg-tertiary: #1a1a1a;
-            --accent-primary: #6366f1;
-            --accent-secondary: #8b5cf6;
-            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --text-primary: #ffffff;
-            --text-secondary: #a1a1aa;
-            --text-tertiary: #71717a;
-            --border-color: #27272a;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --separator: #27272a;
-        }
-
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: var(--font-main);
+            background: var(--bg-base);
+            color: var(--text-vibrant);
             line-height: 1.6;
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .nebula-glow {
+            position: fixed;
+            top: -10%;
+            right: -10%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            z-index: -1;
+            filter: blur(100px);
         }
 
         /* Header */
-        .header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 24px 0;
+        header {
+            padding: 32px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(20px);
             position: sticky;
             top: 0;
-            z-index: 100;
-            backdrop-filter: blur(10px);
+            z-index: 1000;
         }
 
-        .header-content {
+        .header-inner {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 0 32px;
+            padding: 0 48px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .header h1 {
-            font-size: 28px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            width: 52px;
+            height: 52px;
+            background: var(--gradient-nebula);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .brand-text h1 {
+            font-size: 26px;
             font-weight: 800;
-            background: var(--accent-gradient);
+            letter-spacing: -0.5px;
+            background: var(--gradient-nebula);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 12px;
         }
 
-        .header h1 i {
-            -webkit-text-fill-color: var(--accent-primary);
-        }
-
-        .stats-bar {
-            display: flex;
-            gap: 24px;
-            align-items: center;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .stat-label {
+        .brand-text span {
             font-size: 12px;
-            color: var(--text-tertiary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .stat-node .val {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-vibrant);
+            font-family: var(--font-mono);
+        }
+
+        .stat-node .lbl {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
             margin-top: 4px;
         }
 
-        /* Toggle Button */
-        .toggle-trash-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.2s ease;
-            position: relative;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 12px;
         }
 
-        .toggle-trash-btn:hover {
-            background: var(--bg-primary);
-            border-color: var(--accent-primary);
+        .nav-link:hover, .nav-link.active {
             color: var(--accent-primary);
+            background: rgba(129, 140, 248, 0.1);
         }
 
-        .toggle-trash-btn.active {
-            background: var(--accent-gradient);
-            border-color: var(--accent-primary);
-            color: white;
+        .nav-link.trash-link {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            color: var(--danger);
         }
 
-        .toggle-trash-btn .badge {
-            position: absolute;
-            top: -6px;
-            right: -6px;
+        .nav-link.trash-link.active {
             background: var(--danger);
             color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 18px;
-            text-align: center;
         }
 
-        /* Main Container */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 32px;
-        }
-
-        /* Section Headers */
-        .section-header {
-            margin: 48px 0 24px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .section-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .section-header .icon {
-            width: 32px;
-            height: 32px;
-            background: var(--accent-gradient);
+        .trash-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
+            font-size: 12px;
+            font-weight: 700;
         }
 
-        /* Meeting Timeline Item */
-        .meeting-item {
+        /* Main Layout */
+        main {
+            max-width: 1400px;
+            margin: 60px auto;
+            padding: 0 48px;
+        }
+
+        .section-intro {
+            margin-bottom: 48px;
+        }
+
+        .section-intro h2 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .section-intro p {
+            color: var(--text-muted);
+            font-size: 17px;
+        }
+
+        /* Meeting Entry - Larger, Better Separated */
+        .meeting-entry {
             position: relative;
-            padding: 32px 0;
-            border-bottom: 1px solid var(--separator);
+            padding: 60px 0;
+            border-top: 2px solid var(--border-subtle);
+            transition: all 0.4s ease;
         }
 
-        .meeting-item:last-child {
-            border-bottom: none;
+        .meeting-entry:first-child {
+            border-top: none;
         }
 
-        .meeting-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 4px;
-            height: 60%;
-            background: var(--accent-gradient);
-            border-radius: 2px;
-            transform: translateY(-50%);
+        .meeting-entry:hover {
+            background: rgba(129, 140, 248, 0.03);
         }
 
-        .meeting-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            padding-left: 24px;
-        }
-
-        .meeting-title-section {
-            flex: 1;
+        /* Meeting Header with Topic */
+        .meeting-topic {
+            display: inline-block;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-primary);
+            background: rgba(129, 140, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: 700;
         }
 
         .meeting-title {
-            font-size: 22px;
+            font-size: 32px;
             font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            color: var(--text-vibrant);
+            margin-bottom: 20px;
+            line-height: 1.3;
+            letter-spacing: -0.5px;
         }
 
-        .meeting-title i {
-            font-size: 18px;
-            color: var(--accent-primary);
-        }
-
-        .meeting-meta {
+        .meeting-meta-row {
             display: flex;
-            gap: 20px;
+            gap: 32px;
+            margin-bottom: 32px;
             flex-wrap: wrap;
-            margin-top: 8px;
         }
 
-        .meta-item {
+        .meta-tag {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: var(--text-tertiary);
+            gap: 10px;
+            font-size: 15px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
         }
 
-        .meta-item i {
-            font-size: 12px;
+        .meta-tag i {
+            width: 20px;
             color: var(--accent-secondary);
+            font-size: 16px;
         }
 
+        /* Action Buttons */
         .meeting-actions {
             display: flex;
-            gap: 8px;
+            gap: 12px;
+            margin-bottom: 40px;
         }
 
-        .btn {
-            padding: 10px 18px;
-            border-radius: 8px;
-            border: none;
-            font-size: 13px;
-            font-weight: 600;
+        .action-btn {
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            background: transparent;
+            color: var(--text-muted);
             cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: var(--font-main);
         }
 
-        .btn-delete {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-delete:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: var(--danger);
-        }
-
-        .btn-restore {
-            background: var(--accent-gradient);
-            color: white;
-        }
-
-        .btn-restore:hover {
-            opacity: 0.9;
+        .action-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: rgba(129, 140, 248, 0.1);
             transform: translateY(-2px);
         }
 
-        .btn-play {
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--accent-primary);
-            border: 1px solid rgba(99, 102, 241, 0.2);
+        .action-btn.delete-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: rgba(244, 63, 94, 0.1);
         }
 
-        .btn-play:hover {
-            background: rgba(99, 102, 241, 0.2);
+        .action-btn.restore-btn {
+            background: var(--gradient-nebula);
+            color: white;
+            border: none;
         }
 
-        /* Content Sections */
-        .meeting-content {
-            padding-left: 24px;
+        .action-btn.restore-btn:hover {
+            opacity: 0.9;
         }
 
-        .content-block {
-            margin-bottom: 24px;
+        /* Intelligence Sections - 3 Distinct Blocks */
+        .intelligence-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 32px;
+            margin-top: 40px;
         }
 
-        .block-header {
+        .intel-section {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .intel-section:hover {
+            border-color: rgba(129, 140, 248, 0.3);
+            box-shadow: 0 0 40px rgba(129, 140, 248, 0.05);
+        }
+
+        .intel-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
+            align-items: center;
+            margin-bottom: 24px;
             cursor: pointer;
             user-select: none;
         }
 
-        .block-title {
+        .intel-title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            gap: 12px;
         }
 
-        .block-title i {
-            font-size: 14px;
+        .intel-title i {
+            font-size: 20px;
             color: var(--accent-secondary);
         }
 
-        .expand-icon {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            transition: transform 0.2s ease;
+        .intel-title h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-vibrant);
         }
 
-        .expand-icon.expanded {
+        .expand-toggle {
+            font-size: 14px;
+            color: var(--text-dim);
+            transition: transform 0.3s ease;
+        }
+
+        .expand-toggle.expanded {
             transform: rotate(180deg);
         }
 
-        .block-content {
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: 20px;
-            font-size: 14px;
+        .intel-content {
+            font-size: 16px;
             line-height: 1.8;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 12px;
         }
 
-        .block-content.collapsed {
-            max-height: 3.6em;
+        .intel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .intel-content::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 10px;
+        }
+
+        .intel-content.collapsed {
+            max-height: 120px;
             overflow: hidden;
             position: relative;
         }
 
-        .block-content.collapsed::after {
+        .intel-content.collapsed::after {
             content: '';
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 40px;
-            background: linear-gradient(to bottom, transparent, var(--bg-tertiary));
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, var(--bg-surface));
+        }
+
+        /* Notion-Style Formatting */
+        .notion-content h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-vibrant);
+            margin: 28px 0 16px;
+            line-height: 1.3;
+        }
+
+        .notion-content h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-vibrant);
+            margin: 24px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notion-content h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin: 20px 0 10px;
+        }
+
+        .notion-content ul, .notion-content ol {
+            padding-left: 24px;
+            margin: 16px 0;
+        }
+
+        .notion-content li {
+            margin-bottom: 10px;
+            line-height: 1.7;
+        }
+
+        .notion-content strong {
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+
+        .notion-content em {
+            color: var(--accent-primary);
+            font-style: italic;
+        }
+
+        .notion-content blockquote {
+            border-left: 4px solid var(--accent-primary);
+            padding-left: 20px;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-style: italic;
+            background: rgba(129, 140, 248, 0.05);
+            padding: 16px 20px;
+            border-radius: 8px;
+        }
+
+        .notion-content code {
+            background: var(--bg-elevated);
+            color: var(--accent-primary);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+        }
+
+        .notion-content pre {
+            background: var(--bg-elevated);
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .notion-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .notion-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .notion-content th, .notion-content td {
+            padding: 14px;
+            text-align: left;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .notion-content th {
+            background: var(--bg-elevated);
+            font-weight: 600;
+            color: var(--text-vibrant);
+            font-size: 15px;
+        }
+
+        .notion-content td {
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        /* Checkboxes */
+        .notion-content .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .notion-content .checklist li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .notion-content .checklist input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent-primary);
         }
 
         /* Audio Player */
         .audio-player {
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid var(--border-color);
+            background: var(--bg-elevated);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 32px;
+            border: 1px solid var(--border-subtle);
         }
 
-        .audio-player audio {
+        audio {
             width: 100%;
             height: 48px;
-            outline: none;
-        }
-
-        /* Summary Rendering */
-        .summary-content h1, .summary-content h2, .summary-content h3 {
-            color: var(--text-primary);
-            margin-top: 24px;
-            margin-bottom: 12px;
-        }
-
-        .summary-content h1 {
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .summary-content h2 {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .summary-content h3 {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .summary-content ul, .summary-content ol {
-            margin-left: 24px;
-            margin-top: 8px;
-        }
-
-        .summary-content li {
-            margin-bottom: 8px;
-        }
-
-        .summary-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-        }
-
-        .summary-content th, .summary-content td {
-            padding: 12px;
-            text-align: left;
-            border: 1px solid var(--border-color);
-        }
-
-        .summary-content th {
-            background: var(--bg-secondary);
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .summary-content strong {
-            color: var(--accent-primary);
-            font-weight: 600;
-        }
-
-        .summary-content code {
-            background: var(--bg-secondary);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
+            border-radius: 12px;
         }
 
         /* Empty State */
-        .empty-state {
+        .status-hero {
             text-align: center;
-            padding: 80px 20px;
-            color: var(--text-tertiary);
+            padding: 120px 0;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .empty-state i {
-            font-size: 64px;
-            color: var(--text-tertiary);
-            margin-bottom: 20px;
+        .status-hero i {
+            font-size: 100px;
+            background: var(--gradient-nebula);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 32px;
+            opacity: 0.6;
         }
 
-        .empty-state h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
+        .status-hero h3 {
+            font-size: 28px;
+            margin-bottom: 16px;
+            font-weight: 700;
         }
 
-        /* Loading State */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
+        .status-hero p {
+            color: var(--text-muted);
+            font-size: 17px;
         }
 
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--accent-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        /* Loading */
+        .shimmer {
+            height: 300px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0) 100%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 20px;
+            margin-bottom: 32px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 20px;
+        @media (max-width: 1024px) {
+            .header-inner, main {
+                padding: 0 24px;
             }
-
-            .stats-bar {
-                width: 100%;
-                justify-content: space-around;
+            .meeting-title {
+                font-size: 26px;
             }
-
-            .meeting-header {
-                flex-direction: column;
-                gap: 16px;
+            .notion-content h1 {
+                font-size: 24px;
             }
-
-            .meeting-actions {
-                width: 100%;
-            }
-
-            .btn {
-                flex: 1;
+            .notion-content h2 {
+                font-size: 20px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="header-content">
-            <h1>
-                <i class="fas fa-robot"></i>
-                MeetSync AI Dashboard
-            </h1>
-            <div class="stats-bar">
-                <div class="stat-item">
-                    <div class="stat-value" id="total-meetings">0</div>
-                    <div class="stat-label">Total Meetings</div>
+    <div class="nebula-glow"></div>
+
+    <header>
+        <div class="header-inner">
+            <div class="brand">
+                <div class="brand-logo">
+                    <i class="fas fa-infinity"></i>
                 </div>
-                <button class="toggle-trash-btn" id="trash-toggle" onclick="toggleDeletedView()" title="View Deleted">
-                    <i class="fas fa-trash"></i>
-                    <span class="badge" id="deleted-badge" style="display: none;">0</span>
-                </button>
+                <div class="brand-text">
+                    <span>Admin Central</span>
+                    <h1>MeetSync AI</h1>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <div class="stat-node">
+                    <div class="val" id="total-meetings">00</div>
+                    <div class="lbl">Active Intel</div>
+                </div>
+
+                <a class="nav-link active" id="active-nav" onclick="setView(false)">
+                    <i class="fas fa-bolt"></i> Activity
+                </a>
+
+                <a class="nav-link trash-link" id="trash-nav" onclick="setView(true)">
+                    <i class="fas fa-trash-alt"></i> Archived
+                    <span class="trash-count" id="deleted-badge" style="display: none">0</span>
+                </a>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Section Header -->
-        <div class="section-header">
-            <div class="icon" id="section-icon">
-                <i class="fas fa-video"></i>
-            </div>
-            <h2 id="section-title">Recordings & Summaries</h2>
+    <main>
+        <div class="section-intro">
+            <h2 id="view-title">Intelligence Feed</h2>
+            <p id="view-desc">Live stream of processed meeting intelligence with AI-powered neural summaries.</p>
         </div>
 
-        <!-- Meetings List -->
         <div id="meetings-list">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p style="color: var(--text-secondary);">Loading meetings...</p>
-            </div>
+            <div class="shimmer"></div>
+            <div class="shimmer"></div>
         </div>
-    </div>
+    </main>
 
     <script>
         const API_BASE = 'http://localhost:3001/api';
         let allMeetings = [];
         let showingDeleted = false;
 
-        // Fetch and render meetings
         async function loadMeetings() {
             try {
                 const response = await fetch(`${API_BASE}/meetings`);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
-                console.log('[Admin] Loaded meetings:', data);
-
-                // Handle both formats: { meetings: [...] } or direct array
                 allMeetings = Array.isArray(data) ? data : (data.meetings || []);
 
-                // Separate active and deleted
                 const active = allMeetings.filter(m => !m.deleted_at);
                 const deleted = allMeetings.filter(m => m.deleted_at);
 
-                // Update stats
-                document.getElementById('total-meetings').textContent = active.length;
+                document.getElementById('total-meetings').textContent = active.length.toString().padStart(2, '0');
 
-                const deletedBadge = document.getElementById('deleted-badge');
+                const badge = document.getElementById('deleted-badge');
                 if (deleted.length > 0) {
-                    deletedBadge.textContent = deleted.length;
-                    deletedBadge.style.display = 'block';
+                    badge.textContent = deleted.length;
+                    badge.style.display = 'inline-block';
                 } else {
-                    deletedBadge.style.display = 'none';
+                    badge.style.display = 'none';
                 }
 
-                // Render based on current view
-                if (showingDeleted) {
-                    renderMeetings(deleted, true);
-                } else {
-                    renderMeetings(active, false);
-                }
+                renderMeetings(showingDeleted ? deleted : active);
             } catch (error) {
                 console.error('[Admin] Error loading meetings:', error);
-                document.getElementById('meetings-list').innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <h3>Error loading meetings</h3>
-                        <p>${error.message}</p>
-                        <p style="margin-top: 12px; font-size: 12px;">Make sure backend is running on http://localhost:3001</p>
-                    </div>
-                `;
+                showError(error.message);
             }
         }
 
-        // Toggle between active and deleted view
-        function toggleDeletedView() {
-            showingDeleted = !showingDeleted;
+        function setView(isDeleted) {
+            showingDeleted = isDeleted;
+            document.getElementById('active-nav').classList.toggle('active', !isDeleted);
+            document.getElementById('trash-nav').classList.toggle('active', isDeleted);
 
-            const toggleBtn = document.getElementById('trash-toggle');
-            const sectionTitle = document.getElementById('section-title');
-            const sectionIcon = document.getElementById('section-icon');
+            document.getElementById('view-title').textContent = isDeleted ? 'Recently Deleted' : 'Intelligence Feed';
+            document.getElementById('view-desc').textContent = isDeleted
+                ? 'Archived intelligence pending auto-purge in 30 days.'
+                : 'Live stream of processed meeting intelligence with AI-powered neural summaries.';
 
-            if (showingDeleted) {
-                toggleBtn.classList.add('active');
-                sectionTitle.textContent = 'Recently Deleted';
-                sectionIcon.innerHTML = '<i class="fas fa-trash"></i>';
-            } else {
-                toggleBtn.classList.remove('active');
-                sectionTitle.textContent = 'Recordings & Summaries';
-                sectionIcon.innerHTML = '<i class="fas fa-video"></i>';
-            }
-
-            // Re-render current view
-            const active = allMeetings.filter(m => !m.deleted_at);
-            const deleted = allMeetings.filter(m => m.deleted_at);
-            renderMeetings(showingDeleted ? deleted : active, showingDeleted);
+            const filtered = allMeetings.filter(m => isDeleted ? m.deleted_at : !m.deleted_at);
+            renderMeetings(filtered);
         }
 
-        // Render meetings list
-        function renderMeetings(meetings, isDeleted) {
+        function renderMeetings(meetings) {
             const container = document.getElementById('meetings-list');
 
             if (meetings.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-${isDeleted ? 'check-circle' : 'inbox'}"></i>
-                        <h3>${isDeleted ? 'No deleted meetings' : 'No meetings yet'}</h3>
-                        <p>${isDeleted ? 'Deleted meetings will appear here and auto-delete after 30 days' : 'Start recording to see your meetings here'}</p>
+                    <div class="status-hero">
+                        <i class="fas fa-ghost"></i>
+                        <h3>No Intelligence Found</h3>
+                        <p>${showingDeleted ? 'No archived meetings at the moment.' : 'Start recording to populate your intelligence feed.'}</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = meetings.map(meeting => {
-                const date = new Date(meeting.created_at);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'short', day: 'numeric'
-                });
-                const formattedTime = date.toLocaleTimeString('en-US', {
-                    hour: '2-digit', minute: '2-digit'
-                });
+            container.innerHTML = meetings.map(m => {
+                const date = new Date(m.created_at);
+                const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-                // Calculate days until auto-delete (30 days from deleted_at)
-                let autoDeleteInfo = '';
-                if (isDeleted && meeting.deleted_at) {
-                    const deletedDate = new Date(meeting.deleted_at);
-                    const deleteAfter = new Date(deletedDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-                    const daysLeft = Math.ceil((deleteAfter - new Date()) / (1000 * 60 * 60 * 24));
-                    autoDeleteInfo = `<div class="meta-item"><i class="fas fa-clock"></i>Auto-deletes in ${daysLeft} days</div>`;
+                let autoPurge = '';
+                if (showingDeleted && m.deleted_at) {
+                    const delDate = new Date(m.deleted_at);
+                    const purgeDate = new Date(delDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                    const diff = Math.ceil((purgeDate - new Date()) / (1000 * 3600 * 24));
+                    autoPurge = `<div class="meta-tag" style="color: var(--danger)"><i class="fas fa-clock"></i> Auto-purge in ${diff} days</div>`;
                 }
 
-                const duration = meeting.duration ? `${Math.floor(meeting.duration / 60)}m ${meeting.duration % 60}s` : 'N/A';
-                const wordCount = meeting.transcription_words || 0;
+                const duration = m.duration ? `${Math.floor(m.duration / 60)}m ${m.duration % 60}s` : 'N/A';
+                const topic = extractTopic(m.summary || m.name);
 
                 return `
-                    <div class="meeting-item">
-                        <div class="meeting-header">
-                            <div class="meeting-title-section">
-                                <h4 class="meeting-title">
-                                    <i class="fas fa-circle-dot"></i>
-                                    ${meeting.name || 'Untitled Meeting'}
-                                </h4>
-                                <div class="meeting-meta">
-                                    <div class="meta-item">
-                                        <i class="fas fa-calendar"></i>
-                                        ${formattedDate}
-                                    </div>
-                                    <div class="meta-item">
-                                        <i class="fas fa-clock"></i>
-                                        ${formattedTime}
-                                    </div>
-                                    <div class="meta-item">
-                                        <i class="fas fa-stopwatch"></i>
-                                        ${duration}
-                                    </div>
-                                    <div class="meta-item">
-                                        <i class="fas fa-text-width"></i>
-                                        ${wordCount} words
-                                    </div>
-                                    ${autoDeleteInfo}
-                                </div>
-                            </div>
-                            <div class="meeting-actions">
-                                ${isDeleted ? `
-                                    <button class="btn btn-restore" onclick="restoreMeeting('${meeting.id}')">
-                                        <i class="fas fa-undo"></i>
-                                        Restore
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-play" onclick="toggleAudio('${meeting.id}')">
-                                        <i class="fas fa-play"></i>
-                                        Play
-                                    </button>
-                                    <button class="btn btn-delete" onclick="deleteMeeting('${meeting.id}')">
-                                        <i class="fas fa-trash"></i>
-                                        Delete
-                                    </button>
-                                `}
-                            </div>
+                    <div class="meeting-entry">
+                        <div class="meeting-topic">${topic}</div>
+                        <h2 class="meeting-title">${m.name || 'Untitled Meeting'}</h2>
+
+                        <div class="meeting-meta-row">
+                            <div class="meta-tag"><i class="fas fa-calendar"></i> ${dateStr}</div>
+                            <div class="meta-tag"><i class="fas fa-clock"></i> ${timeStr}</div>
+                            <div class="meta-tag"><i class="fas fa-stopwatch"></i> ${duration}</div>
+                            <div class="meta-tag"><i class="fas fa-quote-left"></i> ${m.transcription_words || 0} words</div>
+                            ${autoPurge}
                         </div>
 
-                        <div class="meeting-content">
-                            ${renderAudioPlayer(meeting)}
-                            ${renderCaptions(meeting)}
-                            ${renderTranscription(meeting)}
-                            ${renderSummary(meeting)}
+                        <div class="meeting-actions">
+                            ${showingDeleted ? `
+                                <button class="action-btn restore-btn" onclick="restoreMeeting('${m.id}')">
+                                    <i class="fas fa-rotate-left"></i> Restore
+                                </button>
+                            ` : `
+                                <button class="action-btn" onclick="playAudio('${m.id}')">
+                                    <i class="fas fa-play"></i> Play Recording
+                                </button>
+                                <button class="action-btn delete-btn" onclick="deleteMeeting('${m.id}')">
+                                    <i class="fas fa-trash-alt"></i> Archive
+                                </button>
+                            `}
+                        </div>
+
+                        ${renderAudioPlayer(m)}
+
+                        <div class="intelligence-grid">
+                            ${renderCaptionsSection(m)}
+                            ${renderSummarySection(m)}
+                            ${renderTranscriptionSection(m)}
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // Render audio player
-        function renderAudioPlayer(meeting) {
-            if (!meeting.s3_url) return '';
-
-            const audioUrl = `/api/audio/${meeting.id}`;
-
+        function renderAudioPlayer(m) {
+            if (!m.s3_url) return '';
             return `
-                <div class="content-block">
-                    <div class="block-header">
-                        <div class="block-title">
-                            <i class="fas fa-volume-up"></i>
-                            Recording
-                        </div>
-                    </div>
-                    <div class="audio-player">
-                        <audio id="audio-${meeting.id}" controls>
-                            <source src="${audioUrl}" type="audio/webm">
-                            <source src="${meeting.s3_url}" type="audio/webm">
-                            Your browser does not support audio playback.
-                        </audio>
-                    </div>
+                <div class="audio-player" id="audio-${m.id}">
+                    <audio controls>
+                        <source src="/api/audio/${m.id}" type="audio/webm">
+                        <source src="${m.s3_url}" type="audio/webm">
+                        Your browser does not support audio playback.
+                    </audio>
                 </div>
             `;
         }
 
-        // Render captions (collapsed by default)
-        function renderCaptions(meeting) {
-            if (!meeting.client_transcript) return '';
-
+        function renderCaptionsSection(m) {
+            if (!m.client_transcript) return '';
             return `
-                <div class="content-block">
-                    <div class="block-header" onclick="toggleContent('captions-${meeting.id}')">
-                        <div class="block-title">
+                <div class="intel-section">
+                    <div class="intel-header" onclick="toggleSection('captions-${m.id}')">
+                        <div class="intel-title">
                             <i class="fas fa-closed-captioning"></i>
-                            Meeting Captions
+                            <h3>Meeting Captions</h3>
                         </div>
-                        <i class="fas fa-chevron-down expand-icon" id="captions-${meeting.id}-icon"></i>
+                        <i class="fas fa-chevron-down expand-toggle" id="captions-${m.id}-toggle"></i>
                     </div>
-                    <div class="block-content collapsed" id="captions-${meeting.id}">
-                        ${meeting.client_transcript}
+                    <div class="intel-content collapsed" id="captions-${m.id}">
+                        ${m.client_transcript}
                     </div>
                 </div>
             `;
         }
 
-        // Render transcription (collapsed by default)
-        function renderTranscription(meeting) {
-            if (!meeting.elevenlabs_transcript) return '';
-
+        function renderSummarySection(m) {
+            if (!m.summary) return '';
             return `
-                <div class="content-block">
-                    <div class="block-header" onclick="toggleContent('transcript-${meeting.id}')">
-                        <div class="block-title">
-                            <i class="fas fa-file-alt"></i>
-                            ElevenLabs Transcription
-                        </div>
-                        <i class="fas fa-chevron-down expand-icon" id="transcript-${meeting.id}-icon"></i>
-                    </div>
-                    <div class="block-content collapsed" id="transcript-${meeting.id}">
-                        ${meeting.elevenlabs_transcript}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Render summary (expanded by default)
-        function renderSummary(meeting) {
-            if (!meeting.summary) return '';
-
-            // Parse markdown-style summary
-            const formattedSummary = formatSummary(meeting.summary);
-
-            return `
-                <div class="content-block">
-                    <div class="block-header" onclick="toggleContent('summary-${meeting.id}')">
-                        <div class="block-title">
+                <div class="intel-section">
+                    <div class="intel-header" onclick="toggleSection('summary-${m.id}')">
+                        <div class="intel-title">
                             <i class="fas fa-sparkles"></i>
-                            AI Summary
+                            <h3>AI Summary</h3>
                         </div>
-                        <i class="fas fa-chevron-up expand-icon expanded" id="summary-${meeting.id}-icon"></i>
+                        <i class="fas fa-chevron-up expand-toggle expanded" id="summary-${m.id}-toggle"></i>
                     </div>
-                    <div class="block-content summary-content" id="summary-${meeting.id}">
-                        ${formattedSummary}
+                    <div class="intel-content notion-content" id="summary-${m.id}">
+                        ${formatNotionContent(m.summary)}
                     </div>
                 </div>
             `;
         }
 
-        // Format summary with basic markdown parsing
-        function formatSummary(text) {
+        function renderTranscriptionSection(m) {
+            if (!m.elevenlabs_transcript) return '';
+            return `
+                <div class="intel-section">
+                    <div class="intel-header" onclick="toggleSection('transcript-${m.id}')">
+                        <div class="intel-title">
+                            <i class="fas fa-wave-square"></i>
+                            <h3>ElevenLabs Transcription</h3>
+                        </div>
+                        <i class="fas fa-chevron-down expand-toggle" id="transcript-${m.id}-toggle"></i>
+                    </div>
+                    <div class="intel-content collapsed" id="transcript-${m.id}">
+                        ${m.elevenlabs_transcript}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleSection(id) {
+            const content = document.getElementById(id);
+            const toggle = document.getElementById(id + '-toggle');
+
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('expanded');
+        }
+
+        function formatNotionContent(text) {
             return text
+                // Headers
                 .replace(/^# (.+)$/gm, '<h1>$1</h1>')
                 .replace(/^## (.+)$/gm, '<h2>$1</h2>')
                 .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+
+                // Bold and italic
+                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/^- (.+)$/gm, '<li>$1</li>')
-                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-                .replace(/\n\n/g, '<br><br>');
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+
+                // Checkboxes
+                .replace(/^- \[ \] (.+)$/gm, '<li class="checkbox-item"><input type="checkbox" disabled> $1</li>')
+                .replace(/^- \[x\] (.+)$/gm, '<li class="checkbox-item"><input type="checkbox" checked disabled> $1</li>')
+
+                // Lists
+                .replace(/^- (?!\[)(.+)$/gm, '<li>$1</li>')
+                .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+
+                // Wrap checkbox lists
+                .replace(/((?:<li class="checkbox-item">.*?<\/li>\n?)+)/g, '<ul class="checklist">$1</ul>')
+
+                // Wrap regular lists
+                .replace(/((?:<li>(?!class).*?<\/li>\n?)+)/g, '<ul>$1</ul>')
+
+                // Blockquotes
+                .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+
+                // Code blocks
+                .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+
+                // Line breaks
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, ' ');
         }
 
-        // Toggle content expansion
-        function toggleContent(id) {
-            const content = document.getElementById(id);
-            const icon = document.getElementById(id + '-icon');
+        function extractTopic(text) {
+            if (!text) return 'GENERAL MEETING';
 
-            content.classList.toggle('collapsed');
-            icon.classList.toggle('expanded');
+            // Try to extract topic from first line or title
+            const firstLine = text.split('\n')[0].replace(/[#*]/g, '').trim();
+            const words = firstLine.split(' ').slice(0, 5).join(' ');
+            return words.toUpperCase() || 'MEETING NOTES';
         }
 
-        // Delete meeting
-        async function deleteMeeting(id) {
-            if (!confirm('Are you sure you want to delete this meeting? It will be moved to Recently Deleted.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/meetings/${id}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    await loadMeetings();
+        function playAudio(id) {
+            const audio = document.querySelector(`#audio-${id} audio`);
+            if (audio) {
+                if (audio.paused) {
+                    audio.play();
                 } else {
-                    alert('Failed to delete meeting');
+                    audio.pause();
                 }
-            } catch (error) {
-                console.error('[Admin] Error deleting meeting:', error);
-                alert('Error deleting meeting');
             }
         }
 
-        // Restore meeting
+        async function deleteMeeting(id) {
+            if (!confirm('Archive this meeting? It will be moved to Recently Deleted.')) return;
+            try {
+                const res = await fetch(`${API_BASE}/meetings/${id}`, { method: 'DELETE' });
+                if (res.ok) loadMeetings();
+                else alert('Failed to archive meeting');
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
         async function restoreMeeting(id) {
             try {
-                const response = await fetch(`${API_BASE}/meetings/${id}/restore`, {
-                    method: 'POST'
-                });
-
-                if (response.ok) {
-                    await loadMeetings();
-                } else {
-                    alert('Failed to restore meeting');
-                }
-            } catch (error) {
-                console.error('[Admin] Error restoring meeting:', error);
-                alert('Error restoring meeting');
+                const res = await fetch(`${API_BASE}/meetings/${id}/restore`, { method: 'POST' });
+                if (res.ok) loadMeetings();
+                else alert('Failed to restore meeting');
+            } catch (e) {
+                alert('Error: ' + e.message);
             }
         }
 
-        // Toggle audio playback
-        function toggleAudio(id) {
-            const audio = document.getElementById(`audio-${id}`);
-            if (audio.paused) {
-                audio.play();
-            } else {
-                audio.pause();
-            }
+        function showError(msg) {
+            document.getElementById('meetings-list').innerHTML = `
+                <div class="status-hero">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <h3>Connection Lost</h3>
+                    <p>${msg}</p>
+                    <p style="margin-top: 12px; font-size: 15px;">Make sure backend is running on http://localhost:3001</p>
+                </div>
+            `;
         }
 
         // Initialize
