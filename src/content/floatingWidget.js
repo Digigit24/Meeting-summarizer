@@ -161,12 +161,12 @@ if (!window.meetSyncWidgetInjected) {
 
         .meetsync-modal-buttons {
           display: flex;
-          gap: 12px;
+          gap: 8px;
         }
 
         .meetsync-modal-btn {
           flex: 1;
-          padding: 12px;
+          padding: 12px 16px;
           border: none;
           border-radius: 8px;
           font-size: 14px;
@@ -193,6 +193,18 @@ if (!window.meetSyncWidgetInjected) {
         .meetsync-modal-btn.secondary:hover {
           background: #e2e8f0;
         }
+
+        .meetsync-modal-btn.danger {
+          background: #fee2e2;
+          color: #dc2626;
+          border: 1px solid #fca5a5;
+        }
+
+        .meetsync-modal-btn.danger:hover {
+          background: #fca5a5;
+          color: white;
+          transform: translateY(-2px);
+        }
       </style>
 
       <div class="meetsync-widget-content">
@@ -217,6 +229,7 @@ if (!window.meetSyncWidgetInjected) {
           />
           <div class="meetsync-modal-hint">Leave blank for default: Meeting - [Date Time]</div>
           <div class="meetsync-modal-buttons">
+            <button class="meetsync-modal-btn danger" id="meetsync-discard-btn">Discard</button>
             <button class="meetsync-modal-btn secondary" id="meetsync-cancel-btn">Cancel</button>
             <button class="meetsync-modal-btn primary" id="meetsync-save-btn">Save & Upload</button>
           </div>
@@ -257,6 +270,7 @@ if (!window.meetSyncWidgetInjected) {
     const nameInput = widget.querySelector('#meetsync-meeting-name');
     const saveBtn = widget.querySelector('#meetsync-save-btn');
     const cancelBtn = widget.querySelector('#meetsync-cancel-btn');
+    const discardBtn = widget.querySelector('#meetsync-discard-btn');
 
     // Record button click - prevent any drag interference
     recordBtn.addEventListener('mousedown', (e) => {
@@ -288,6 +302,16 @@ if (!window.meetSyncWidgetInjected) {
       hideNameModal();
       // Resume recording
       updateRecordingUI(true);
+    });
+
+    // Discard with double confirmation
+    discardBtn.addEventListener('click', () => {
+      if (confirm('⚠️ Are you sure you want to discard this recording? This action cannot be undone.')) {
+        if (confirm('⚠️ Final confirmation: Delete this recording permanently?')) {
+          hideNameModal();
+          discardRecording();
+        }
+      }
     });
 
     // Dragging - only from the text/status area, not the button
@@ -337,6 +361,28 @@ if (!window.meetSyncWidgetInjected) {
 
     isRecording = false;
     updateRecordingUI(false);
+  }
+
+  // Discard Recording
+  function discardRecording() {
+    chrome.storage.local.set({ recording: false });
+
+    chrome.runtime.sendMessage({
+      type: 'DISCARD_RECORDING'
+    });
+
+    isRecording = false;
+    updateRecordingUI(false);
+
+    // Show notification
+    const status = document.getElementById('meetsync-status');
+    const originalText = status.textContent;
+    status.textContent = 'Discarded';
+    status.style.color = '#dc2626';
+    setTimeout(() => {
+      status.textContent = originalText;
+      status.style.color = '';
+    }, 2000);
   }
 
   // Show/Hide Name Modal

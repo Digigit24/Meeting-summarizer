@@ -19,9 +19,7 @@
     "http://localhost:3001/*",
     "http://127.0.0.1:3001/*"
   ],
-  "action": {
-    "default_popup": "popup.html"
-  },
+  "action": {},
   "background": {
     "service_worker": "src/background/background.js",
     "type": "module"
