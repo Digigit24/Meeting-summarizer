@@ -331,14 +331,17 @@ if (!window.meetSyncWidgetInjected) {
   // Start Recording
   function startRecording() {
     const startTime = Date.now();
+    const tempId = `temp_${startTime}`;
+
     chrome.storage.local.set({
       recording: true,
-      recordingStartTime: startTime
+      recordingStartTime: startTime,
+      currentMeetingId: tempId  // Store the temp ID
     });
 
     chrome.runtime.sendMessage({
       type: 'START_RECORDING',
-      meetingName: `temp_${startTime}`
+      meetingName: tempId
     }, (response) => {
       if (response && response.success) {
         isRecording = true;
@@ -352,15 +355,21 @@ if (!window.meetSyncWidgetInjected) {
 
   // Stop Recording
   function stopRecording(meetingName) {
-    chrome.storage.local.set({ recording: false });
+    // Get the original temp ID
+    chrome.storage.local.get(['currentMeetingId'], (result) => {
+      const tempId = result.currentMeetingId;
 
-    chrome.runtime.sendMessage({
-      type: 'STOP_RECORDING',
-      meetingId: meetingName
+      chrome.storage.local.set({ recording: false });
+
+      chrome.runtime.sendMessage({
+        type: 'STOP_RECORDING',
+        meetingId: meetingName,
+        tempMeetingId: tempId  // Pass both IDs
+      });
+
+      isRecording = false;
+      updateRecordingUI(false);
     });
-
-    isRecording = false;
-    updateRecordingUI(false);
   }
 
   // Discard Recording

@@ -7,51 +7,61 @@ import {
 
 const BACKEND_URL = "http://127.0.0.1:3001/api";
 
-export async function uploadMeetingData(meetingId, meetingName) {
+export async function uploadMeetingData(tempMeetingId, meetingName) {
   try {
-    updateMeetingStatus(meetingId, "uploading");
+    console.log("[Uploader] Starting upload");
+    console.log("[Uploader] Temp ID (for audio lookup):", tempMeetingId);
+    console.log("[Uploader] Final meeting name:", meetingName);
 
-    // 1. Gather Data
-    const audioBlob = await getMeetingAudio(meetingId);
-    const transcript = await getFullTranscript(meetingId);
+    updateMeetingStatus(tempMeetingId, "uploading");
+
+    // 1. Gather Data - use tempMeetingId to fetch audio chunks
+    const audioBlob = await getMeetingAudio(tempMeetingId);
+    const transcript = await getFullTranscript(tempMeetingId);
+
+    console.log("[Uploader] Audio blob size:", audioBlob.size, "bytes");
+    console.log("[Uploader] Transcript entries:", transcript.length);
 
     if (audioBlob.size === 0 && transcript.length === 0) {
-      console.error("No data to upload");
+      console.error("[Uploader] No data to upload - both audio and transcript are empty");
       return false;
     }
 
     // 2. Prepare Form Data
     const formData = new FormData();
-    formData.append("audio", audioBlob, `meeting_${meetingId}.webm`);
+    formData.append("audio", audioBlob, `meeting_${meetingName}.webm`);
     formData.append("name", meetingName);
     formData.append("transcript", JSON.stringify(transcript));
+
+    console.log("[Uploader] Uploading to backend:", BACKEND_URL + "/upload");
 
     // 3. Upload
     const response = await fetch(`${BACKEND_URL}/upload`, {
       method: "POST",
       body: formData,
-      // Headers: Authorization if needed (x-api-key)
       headers: {
-        "x-api-key": "my-secret-extension-key", // Dev key
+        "x-api-key": "my-secret-extension-key",
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("[Uploader] Upload failed:", response.status, errorText);
+      throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
     }
 
     const result = await response.json();
-    console.log("Upload Success:", result);
+    console.log("[Uploader] Upload success:", result);
 
-    // 4. Cleanup
-    updateMeetingStatus(meetingId, "uploaded");
-    // Optional: clear huge data immediately or let user do it
-    await clearMeetingData(meetingId);
+    // 4. Cleanup - use tempMeetingId
+    updateMeetingStatus(tempMeetingId, "uploaded");
+    await clearMeetingData(tempMeetingId);
+    console.log("[Uploader] Cleanup completed for:", tempMeetingId);
 
     return result;
   } catch (error) {
-    console.error("Upload Error:", error);
-    updateMeetingStatus(meetingId, "pending_upload");
-    return null; // Signals failure
+    console.error("[Uploader] Upload error:", error);
+    updateMeetingStatus(tempMeetingId, "pending_upload");
+    return null;
   }
 }
