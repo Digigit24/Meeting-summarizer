@@ -63,6 +63,10 @@ backend/.env
 backend/.env.local
 backend/dev.db
 backend/dev.db-journal
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.db
+*.db-journal
 
 # Allow .env.example (it's just a template with no real credentials)
 !backend/.env.example
