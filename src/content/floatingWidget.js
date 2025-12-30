@@ -391,16 +391,13 @@ if (!window.meetSyncWidgetInjected) {
   // Default meeting name
   function getDefaultMeetingName() {
     const now = new Date();
-    const date = now.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-    const time = now.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    return `Meeting - ${date} ${time}`;
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `Meeting ${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
   }
 
   // Dragging Functions

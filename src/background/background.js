@@ -66,20 +66,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         meetingId: msg.meetingName,
       });
 
-      // Inject Scraper
-      console.log("[Background] Injecting scraper into tab:", tab.id);
-      chrome.scripting
-        .executeScript({
-          target: { tabId: tab.id },
-          files: ["src/content/scraper.js"],
-        })
-        .then(() => {
-          console.log("[Background] Scraper injected. Sending START_SCRAPER.");
-          chrome.tabs.sendMessage(tab.id, { type: "START_SCRAPER" });
-        })
-        .catch((e) =>
-          console.error("Scraper injection failed or already present", e)
-        );
+      // Start Scraper (already injected via manifest.json)
+      console.log("[Background] Starting scraper on tab:", tab.id);
+      try {
+        chrome.tabs.sendMessage(tab.id, { type: "START_SCRAPER" });
+        console.log("[Background] START_SCRAPER message sent successfully");
+      } catch (e) {
+        console.warn("[Background] Could not send START_SCRAPER message:", e);
+      }
 
       sessionTranscript = [];
       return { success: true };
