@@ -25,7 +25,6 @@ if (!window.meetSyncWidgetInjected) {
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
           padding: 12px 16px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          cursor: move;
           user-select: none;
           transition: box-shadow 0.2s ease;
           min-width: 140px;
@@ -51,13 +50,14 @@ if (!window.meetSyncWidgetInjected) {
           height: 36px;
           border-radius: 50%;
           border: none;
-          cursor: pointer;
+          cursor: pointer !important;
           font-size: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.2s ease;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          pointer-events: auto;
         }
 
         .meetsync-record-btn.idle {
@@ -258,8 +258,13 @@ if (!window.meetSyncWidgetInjected) {
     const saveBtn = widget.querySelector('#meetsync-save-btn');
     const cancelBtn = widget.querySelector('#meetsync-cancel-btn');
 
-    // Record button click
+    // Record button click - prevent any drag interference
+    recordBtn.addEventListener('mousedown', (e) => {
+      e.stopPropagation(); // Stop drag from starting
+    });
+
     recordBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       if (isRecording) {
         // Stop recording - show name modal
@@ -285,11 +290,16 @@ if (!window.meetSyncWidgetInjected) {
       updateRecordingUI(true);
     });
 
-    // Dragging
-    widget.addEventListener('mousedown', dragStart);
+    // Dragging - only from the text/status area, not the button
+    const statusArea = widget.querySelector('.meetsync-widget-content > div');
+    if (statusArea) {
+      statusArea.addEventListener('mousedown', dragStart);
+      statusArea.addEventListener('touchstart', dragStart);
+      statusArea.style.cursor = 'move';
+    }
+
     document.addEventListener('mousemove', drag);
     document.addEventListener('mouseup', dragEnd);
-    widget.addEventListener('touchstart', dragStart);
     document.addEventListener('touchmove', drag);
     document.addEventListener('touchend', dragEnd);
   }
@@ -404,8 +414,8 @@ if (!window.meetSyncWidgetInjected) {
   function dragStart(e) {
     const widget = document.getElementById('meetsync-floating-widget');
 
-    // Don't drag if clicking button
-    if (e.target.closest('.meetsync-record-btn')) {
+    // Explicitly prevent dragging from button
+    if (e.target.closest('.meetsync-record-btn') || e.target.closest('button')) {
       return;
     }
 
