@@ -1,9 +1,16 @@
 import { encoding_for_model } from "tiktoken";
 import { Groq } from "groq-sdk";
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-});
+let groq = null;
+
+function getGroqClient() {
+  if (!groq) {
+    groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY
+    });
+  }
+  return groq;
+}
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const MAX_CHUNK_TOKENS = 4000; // Chunk size for better summaries
@@ -115,7 +122,7 @@ async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const chatCompletion = await groq.chat.completions.create({
+      const chatCompletion = await getGroqClient().chat.completions.create({
         messages: [
           {
             role: "system",
@@ -190,7 +197,7 @@ async function createFinalSummary(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n---\n\n");
 
   try {
-    const chatCompletion = await groq.chat.completions.create({
+    const chatCompletion = await getGroqClient().chat.completions.create({
       messages: [
         {
           role: "system",
@@ -282,7 +289,7 @@ async function extractActionItems(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n");
 
   try {
-    const chatCompletion = await groq.chat.completions.create({
+    const chatCompletion = await getGroqClient().chat.completions.create({
       messages: [
         {
           role: "user",
