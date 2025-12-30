@@ -25,7 +25,14 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 });
 
 async function startRecording(streamId, meetingId) {
-  if (recording) return;
+  if (recording) {
+    console.log("[Offscreen] Already recording, ignoring start request");
+    return;
+  }
+
+  console.log("=== [Offscreen] Starting Recording ===");
+  console.log("[Offscreen] Stream ID:", streamId);
+  console.log("[Offscreen] Meeting ID:", meetingId);
 
   currentMeetingId = meetingId;
   recording = true;
@@ -86,10 +93,11 @@ async function startRecording(streamId, meetingId) {
   // "Send the recording chunk to IndexedDB every 5 seconds"
   recorder.ondataavailable = async (event) => {
     if (event.data.size > 0) {
+      console.log(`[Offscreen] 💾 Saving audio chunk - Size: ${event.data.size} bytes, Meeting ID: ${currentMeetingId}`);
       await saveChunk(currentMeetingId, event.data);
-      console.log(
-        `Saved chunk of size ${event.data.size} for ${currentMeetingId}`
-      );
+      console.log(`[Offscreen] ✅ Chunk saved successfully`);
+    } else {
+      console.warn(`[Offscreen] ⚠️ Received empty chunk (0 bytes)`);
     }
   };
 
@@ -103,7 +111,13 @@ async function startRecording(streamId, meetingId) {
 }
 
 function stopRecording() {
-  if (!recording || !recorder) return;
+  if (!recording || !recorder) {
+    console.log("[Offscreen] Stop called but not recording");
+    return;
+  }
+
+  console.log("=== [Offscreen] Stopping Recording ===");
+  console.log("[Offscreen] Meeting ID:", currentMeetingId);
 
   recorder.stop();
   recording = false;
@@ -114,5 +128,5 @@ function stopRecording() {
   if (audioContext) {
     audioContext.close();
   }
-  console.log("Recording stopped");
+  console.log("[Offscreen] ✅ Recording stopped successfully");
 }
