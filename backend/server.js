@@ -25,13 +25,21 @@ app.use(express.json());
 
 // Auth Middleware (Basic API Key)
 app.use((req, res, next) => {
-  // Skip auth for health check and admin panel
-  if (req.path === "/" || req.path.startsWith("/admin")) {
+  // Skip auth for health check, admin panel, and static uploads
+  if (
+    req.path === "/" ||
+    req.path.startsWith("/admin") ||
+    req.path.startsWith("/uploads")
+  ) {
     return next();
   }
 
   const apiKey = req.headers["x-api-key"];
-  console.log(`[Auth] Checking API key. Provided: ${apiKey ? "Yes" : "No"}, Expected: ${process.env.API_SECRET_KEY}`);
+  console.log(
+    `[Auth] Checking API key. Provided: ${apiKey ? "Yes" : "No"}, Expected: ${
+      process.env.API_SECRET_KEY
+    }`
+  );
 
   if (!apiKey || apiKey !== process.env.API_SECRET_KEY) {
     // Warning: For this demo/dev, we might want to be lenient if env is missing
@@ -50,15 +58,21 @@ app.use("/admin", express.static("public"));
 app.use("/api", meetingRoutes);
 
 // Serve local audio files with proper headers for playback
-app.use("/uploads", (req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  next();
-}, express.static("uploads"));
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static("uploads")
+);
 
 app.get("/", (req, res) => {
-  res.send("MeetSync Backend Running - Visit /admin/admin.html for the dashboard");
+  res.send(
+    "MeetSync Backend Running - Visit /admin/admin.html for the dashboard"
+  );
 });
 
 app.listen(PORT, () => {
@@ -68,9 +82,21 @@ app.listen(PORT, () => {
   console.log(`📊 Admin Dashboard: http://localhost:${PORT}/admin/admin.html`);
   console.log(`🔧 API Endpoint: http://localhost:${PORT}/api`);
   console.log(`========================================`);
-  console.log(`🔑 API Key configured: ${process.env.API_SECRET_KEY ? "Yes" : "No"}`);
-  console.log(`🎤 ElevenLabs API Key configured: ${process.env.ELEVENLABS_API_KEY ? "Yes" : "No"}`);
-  console.log(`🤖 Gemini API Key configured: ${process.env.GEMINI_API_KEY ? "Yes" : "No"}`);
-  console.log(`☁️  AWS configured: ${process.env.AWS_ACCESS_KEY_ID ? "Yes" : "No (using local fallback)"}`);
+  console.log(
+    `🔑 API Key configured: ${process.env.API_SECRET_KEY ? "Yes" : "No"}`
+  );
+  console.log(
+    `🎤 ElevenLabs API Key configured: ${
+      process.env.ELEVENLABS_API_KEY ? "Yes" : "No"
+    }`
+  );
+  console.log(
+    `🤖 Gemini API Key configured: ${process.env.GEMINI_API_KEY ? "Yes" : "No"}`
+  );
+  console.log(
+    `☁️  AWS configured: ${
+      process.env.AWS_ACCESS_KEY_ID ? "Yes" : "No (using local fallback)"
+    }`
+  );
   console.log(`========================================\n`);
 });

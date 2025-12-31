@@ -26,7 +26,9 @@ export const uploadMeeting = async (req, res) => {
       `[Backend Upload] File: ${file.originalname}, Size: ${file.size}, Mime: ${file.mimetype}`
     );
 
-    const fileKey = `meetings/${Date.now()}_${file.originalname}`;
+    const prefix = process.env.AWS_PREFIX || "meetings/";
+    // User requested "prefix + filename", but keeping specific timestamp for uniqueness is critical to prevent overwrites
+    const fileKey = `${prefix}${Date.now()}_${file.originalname}`;
 
     // 1. Upload to S3
     // Ensure stream is open
@@ -43,7 +45,9 @@ export const uploadMeeting = async (req, res) => {
 
     // Attempt S3 upload
     try {
-      console.log(`[S3 Upload] Attempting upload to bucket: ${process.env.AWS_BUCKET_NAME}`);
+      console.log(
+        `[S3 Upload] Attempting upload to bucket: ${process.env.AWS_BUCKET_NAME}`
+      );
       console.log(`[S3 Upload] Region: ${process.env.AWS_REGION}`);
       console.log(`[S3 Upload] File key: ${fileKey}`);
 
@@ -57,10 +61,15 @@ export const uploadMeeting = async (req, res) => {
       console.error("[S3 Upload] Error name:", s3Error.name);
       console.error("[S3 Upload] Error message:", s3Error.message);
       console.error("[S3 Upload] Error code:", s3Error.code);
-      console.error("[S3 Upload] Full error:", JSON.stringify(s3Error, null, 2));
+      console.error(
+        "[S3 Upload] Full error:",
+        JSON.stringify(s3Error, null, 2)
+      );
 
       // Use local fallback
-      s3Url = `http://127.0.0.1:${process.env.PORT || 3001}/uploads/${file.filename}`;
+      s3Url = `http://127.0.0.1:${process.env.PORT || 3001}/uploads/${
+        file.filename
+      }`;
       console.log(`[S3 Upload] Using local URL instead: ${s3Url}`);
     }
 
@@ -73,7 +82,9 @@ export const uploadMeeting = async (req, res) => {
       .join("\n");
 
     console.log(`[Backend Upload] Audio file size: ${file.size} bytes`);
-    console.log(`[Backend Upload] Client transcript entries: ${rawTranscript.length}`);
+    console.log(
+      `[Backend Upload] Client transcript entries: ${rawTranscript.length}`
+    );
 
     const meeting = await prisma.meeting.create({
       data: {

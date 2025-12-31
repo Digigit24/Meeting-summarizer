@@ -108,24 +108,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         };
       }
 
-      // Check if tab has active capture (user clicked extension icon)
-      const captureStream = activeCaptures.get(tab.id);
-
-      if (!captureStream) {
-        console.error(
-          "[Background] ❌ Tab not authorized. User must click extension icon first!"
-        );
-        return {
-          success: false,
-          error:
-            "Please click the MeetSync extension icon (puzzle piece icon in toolbar) to enable recording!",
-        };
-      }
-
-      console.log("[Background] ✅ Using active capture stream");
-
-      // Get fresh streamId from the active capture for offscreen document
+      // Get fresh streamId for offscreen document
       // We need to call getMediaStreamId right before using it
+      // This requires a user gesture, which is provided by the click on the floating widget
       const streamId = await new Promise((resolve, reject) => {
         chrome.tabCapture.getMediaStreamId((id) => {
           if (chrome.runtime.lastError) {
@@ -280,7 +265,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 // Handle extension icon click - this provides the user gesture needed for tabCapture
 // Store active captures by tab ID
-const activeCaptures = new Map();
+// Store active captures by tab ID (removed for V3)
+// const activeCaptures = new Map();
 
 chrome.action.onClicked.addListener(async (tab) => {
   console.log("[Background] Extension icon clicked on tab:", tab.id);
@@ -301,55 +287,20 @@ chrome.action.onClicked.addListener(async (tab) => {
     return;
   }
 
-  // Start tab capture immediately when icon is clicked
-  console.log("[Background] Starting tab capture...");
-  chrome.tabCapture.capture(
-    {
-      audio: true,
-      video: false,
-    },
-    (stream) => {
-      if (chrome.runtime.lastError) {
-        console.error(
-          "[Background] Failed to capture tab:",
-          chrome.runtime.lastError.message
-        );
-        chrome.notifications.create({
-          type: "basic",
-          title: "MeetSync Error",
-          message: "Failed to enable recording. Please try again.",
-        });
-        return;
-      }
+  // Notify user that they can use the widget
+  console.log("[Background] Extension icon clicked on supported site.");
 
-      if (!stream) {
-        console.error("[Background] No stream returned from capture");
-        chrome.notifications.create({
-          type: "basic",
-          title: "MeetSync Error",
-          message: "Failed to capture tab audio. Make sure audio is playing.",
-        });
-        return;
-      }
+  chrome.notifications.create({
+    type: "basic",
+    title: "MeetSync Ready",
+    message: "Recording enabled! Click the floating widget to start recording.",
+    iconUrl: "icons/icon128.png", // Assuming icon exists, or fallback
+  });
 
-      console.log("[Background] ✅ Tab capture successful!");
-
-      // Store the active stream for this tab
-      activeCaptures.set(tab.id, stream);
-
-      chrome.notifications.create({
-        type: "basic",
-        title: "MeetSync Ready",
-        message: "Recording enabled! Click the floating widget to start recording.",
-      });
-
-      // Mark tab as authorized with active capture
-      chrome.storage.local.set({
-        [`tabAuthorized_${tab.id}`]: true,
-        [`tabCaptureActive_${tab.id}`]: true,
-      });
-    }
-  );
+  // Mark tab as authorized (conceptually, though we don't strictly enforce with activeCaptures anymore)
+  chrome.storage.local.set({
+    [`tabAuthorized_${tab.id}`]: true,
+  });
 });
 
 // Open permissions page on install
