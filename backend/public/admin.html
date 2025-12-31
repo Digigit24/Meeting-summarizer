@@ -552,6 +552,10 @@
               >0</span
             >
           </a>
+
+          <a class="nav-link" onclick="logout()" style="cursor: pointer; color: var(--danger);">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
         </div>
       </div>
     </header>
@@ -578,8 +582,79 @@
       const AUTH_HEADER = { "x-api-key": API_KEY };
       const JSON_HEADERS = { ...AUTH_HEADER, Accept: "application/json" };
 
+      // Admin authentication credentials
+      const ADMIN_EMAIL = "admin@thedigitechsolutions.com";
+      const ADMIN_PASSWORD = "Letmegoin@0007";
+
       let allMeetings = [];
       let showingDeleted = false;
+
+      // Check authentication on page load
+      function checkAuthentication() {
+        const isAuthenticated = sessionStorage.getItem('adminAuthenticated');
+        if (!isAuthenticated) {
+          showLoginScreen();
+          return false;
+        }
+        return true;
+      }
+
+      function showLoginScreen() {
+        document.body.innerHTML = `
+          <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-base);">
+            <div style="width: 400px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 48px; box-shadow: 0 0 60px rgba(129, 140, 248, 0.1);">
+              <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 24px; background: var(--gradient-nebula); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 0 30px var(--accent-glow);">
+                  <i class="fas fa-lock"></i>
+                </div>
+                <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px; background: var(--gradient-nebula); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Admin Access</h1>
+                <p style="color: var(--text-dim); font-size: 14px;">Authorized personnel only</p>
+              </div>
+
+              <div id="login-error" style="display: none; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); color: var(--danger); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; text-align: center;">
+                <i class="fas fa-exclamation-triangle"></i> Invalid credentials
+              </div>
+
+              <form id="login-form" style="margin-bottom: 24px;">
+                <div style="margin-bottom: 20px;">
+                  <label style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px;">Email Address</label>
+                  <input type="email" id="admin-email" required autocomplete="username" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; color: var(--text-vibrant); font-size: 15px; font-family: var(--font-main); outline: none; transition: all 0.3s ease;" placeholder="Enter your email" />
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                  <label style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px;">Password</label>
+                  <input type="password" id="admin-password" required autocomplete="current-password" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; color: var(--text-vibrant); font-size: 15px; font-family: var(--font-main); outline: none; transition: all 0.3s ease;" placeholder="Enter your password" />
+                </div>
+
+                <button type="submit" style="width: 100%; background: var(--gradient-nebula); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; font-family: var(--font-main); cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(129, 140, 248, 0.3);">
+                  <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+              </form>
+
+              <div style="text-align: center;">
+                <p style="font-size: 11px; color: var(--text-dim);">The Digitech Solutions © 2024</p>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const email = document.getElementById('admin-email').value;
+          const password = document.getElementById('admin-password').value;
+          const errorDiv = document.getElementById('login-error');
+
+          if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+            sessionStorage.setItem('adminAuthenticated', 'true');
+            location.reload();
+          } else {
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+              errorDiv.style.display = 'none';
+            }, 3000);
+          }
+        });
+      }
 
       async function loadMeetings() {
         try {
@@ -867,7 +942,17 @@
         ).innerHTML = `<div class="status-hero"><i class="fas fa-triangle-exclamation"></i><h3>Core Pulse Lost</h3><p>${msg}</p></div>`;
       }
 
-      loadMeetings();
+      function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+          sessionStorage.removeItem('adminAuthenticated');
+          location.reload();
+        }
+      }
+
+      // Check authentication before loading meetings
+      if (checkAuthentication()) {
+        loadMeetings();
+      }
     </script>
   </body>
 </html>

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
 import History from './History';
+import Login from './Login';
 
 export default function Popup() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [recording, setRecording] = useState(false);
   const [meetingName, setMeetingName] = useState('');
   const [pendingUploads, setPendingUploads] = useState(false);
@@ -11,6 +14,12 @@ export default function Popup() {
   const [errorMessage, setErrorMessage] = useState(''); // Error message to display
 
   useEffect(() => {
+    // Check authentication status first
+    chrome.storage.local.get(['isAuthenticated'], (result) => {
+      setIsAuthenticated(!!result.isAuthenticated);
+      setAuthChecked(true);
+    });
+
     // Listener for live updates
     const messageListener = (msg) => {
         if (msg.type === 'UPLOAD_STATUS') {
@@ -31,9 +40,19 @@ export default function Popup() {
         setPendingUploads(true);
       }
     });
-    
+
     return () => chrome.runtime.onMessage.removeListener(messageListener);
   }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    chrome.storage.local.set({ isAuthenticated: false }, () => {
+      setIsAuthenticated(false);
+    });
+  };
 
   const toggleRecording = async () => {
     if (recording) {
@@ -82,16 +101,43 @@ export default function Popup() {
       });
   };
 
+  // Show loading or login screen while checking auth
+  if (!authChecked) {
+    return (
+      <div className="w-[320px] bg-slate-900 text-white min-h-[450px] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Main app UI (only shown if authenticated)
   return (
     <div className="w-[320px] bg-slate-900 text-white min-h-[450px] flex flex-col shadow-xl font-sans">
-      {/* ... tabs ... */}
+      {/* Header with logout */}
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-800/50 border-b border-slate-700">
+        <div className="text-xs text-slate-400">MeetSync AI</div>
+        <button
+          onClick={handleLogout}
+          className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+          title="Logout"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* Tabs */}
       <div className="flex border-b border-slate-800">
-          <button 
+          <button
            onClick={() => setView('record')}
            className={`flex-1 py-3 text-sm font-medium ${view === 'record' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-500'}`}>
            Recorder
           </button>
-          <button 
+          <button
            onClick={() => setView('history')}
            className={`flex-1 py-3 text-sm font-medium ${view === 'history' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-500'}`}>
            History
