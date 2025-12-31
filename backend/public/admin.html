@@ -679,6 +679,7 @@
                   showingDeleted
                     ? `
                   <button class="action-btn restore-btn" onclick="restoreMeeting('${m.id}')"><i class="fas fa-rotate-left"></i> Restore</button>
+                  <button class="action-btn delete-btn" onclick="forceDeleteMeeting('${m.id}')"><i class="fas fa-trash"></i> Force Delete</button>
                 `
                     : `
                   <div class="action-btn" onclick="loadSecureAudio('${m.id}')" id="audio-btn-${m.id}"><i class="fas fa-play"></i> Decrypt & Play Secure Stream</div>
@@ -801,6 +802,44 @@
           headers: JSON_HEADERS,
         });
         if (res.ok) loadMeetings();
+      }
+
+      async function forceDeleteMeeting(id) {
+        // Show strong warning dialog
+        const confirmed = confirm(
+          "⚠️ PERMANENT DELETE WARNING ⚠️\n\n" +
+          "This will PERMANENTLY delete this recording and summary.\n" +
+          "This action CANNOT be undone.\n\n" +
+          "Are you absolutely sure you want to continue?"
+        );
+
+        if (!confirmed) return;
+
+        // Double confirmation for safety
+        const doubleCheck = confirm(
+          "FINAL CONFIRMATION\n\n" +
+          "Click OK to permanently delete this recording.\n" +
+          "Click Cancel to keep it."
+        );
+
+        if (!doubleCheck) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/meetings/${id}/force`, {
+            method: "DELETE",
+            headers: JSON_HEADERS,
+          });
+
+          if (res.ok) {
+            alert("✅ Recording permanently deleted");
+            loadMeetings();
+          } else {
+            const error = await res.json();
+            alert("❌ Error: " + (error.error || "Force delete failed"));
+          }
+        } catch (e) {
+          alert("❌ Error: " + e.message);
+        }
       }
 
       function formatNotionContent(text) {

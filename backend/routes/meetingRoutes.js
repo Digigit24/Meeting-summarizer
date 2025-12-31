@@ -96,6 +96,37 @@ router.delete("/meetings/cleanup/old", async (req, res) => {
   }
 });
 
+// Force Delete Meeting (permanently delete before 30 days)
+router.delete("/meetings/:id/force", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if meeting exists and is archived (deleted_at is not null)
+    const meeting = await prisma.meeting.findUnique({
+      where: { id }
+    });
+
+    if (!meeting) {
+      return res.status(404).json({ error: "Meeting not found" });
+    }
+
+    if (!meeting.deleted_at) {
+      return res.status(400).json({ error: "Meeting must be archived before force deletion. Archive it first." });
+    }
+
+    // Permanently delete the meeting
+    await prisma.meeting.delete({
+      where: { id }
+    });
+
+    console.log(`[Meetings API] Force deleted meeting: ${id}`);
+    res.json({ message: "Meeting permanently deleted", id });
+  } catch (error) {
+    console.error("[Meetings API] Error force deleting meeting:", error);
+    res.status(500).json({ error: "Force delete failed" });
+  }
+});
+
 // Proxy audio files from S3 to avoid CORS issues
 router.get("/audio/:meetingId", async (req, res) => {
   try {

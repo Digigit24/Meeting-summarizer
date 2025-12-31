@@ -13,7 +13,7 @@ function getGroqClient() {
 }
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
-const MAX_CHUNK_TOKENS = 4000; // Chunk size for better summaries
+const MAX_CHUNK_TOKENS = 6000; // Increased for longer meetings
 
 /**
  * Summarizes a long meeting transcript using map-reduce chunking with Groq
@@ -52,7 +52,7 @@ export async function summarizeMeeting(transcript, segments = []) {
 
     // Step 4: Extract action items and key points
     const actionItems = await extractActionItems(chunkSummaries);
-    const keyPoints = extractKeyPoints(finalSummary);
+    const keyPoints = extractKeyPoints(finalSummary, chunks.length);
 
     console.log("[Summarization] Summarization completed successfully");
     return {
@@ -126,38 +126,41 @@ async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
         messages: [
           {
             role: "system",
-            content: `You are a concise meeting summarizer. Create SHORT, actionable summaries. Use proper spacing (e.g., "Pratik mentioned" not "Pratikmentioned").`
+            content: `You are an expert meeting summarizer. Extract key information in a clear, scannable format. Support multilingual input (English, Hinglish, Marathi) but ALWAYS output in English only.`
           },
           {
             role: "user",
-            content: `Summarize this meeting segment (part ${chunkIndex} of ${totalChunks}) in 3-5 bullet points.
+            content: `Summarize this meeting segment (part ${chunkIndex} of ${totalChunks}).
 
-CRITICAL RULES:
-1. **Be CONCISE** - Maximum 5 bullet points per section
-2. **Use proper spacing** - "Pratik mentioned" NOT "Pratikmentioned"
-3. **Keep speaker names exact** - Use names from transcript
-4. **Focus on KEY POINTS ONLY** - Skip minor details
+LANGUAGE RULES:
+- Input may be in English, Hinglish (Hindi-English mix), or Marathi
+- ALWAYS write output in ENGLISH ONLY - translate if needed
+- Keep names and technical terms in original form
 
-FORMAT (SHORT):
-### Key Points
-- **[Name]**: [One sentence summary of their main point]
-- **[Name]**: [One sentence only]
-
-### Decisions (if any)
-- [Decision] - by **[Name]**
-
-### Action Items (if any)
-- [Task] - **[Name]**
+FORMAT RULES:
+- Use clear headings and bullet points
+- Keep each point SHORT (one line max)
+- Use ** for emphasis on names/key terms
+- Be scannable - no long paragraphs
 
 TRANSCRIPT:
 ${chunkText}
 
-Keep it SHORT and actionable. Maximum 5 bullet points total.`
+Output format:
+**Key Points:**
+• [Speaker Name] - [brief point in English]
+• [Speaker Name] - [brief point in English]
+
+**Decisions Made:**
+• [Decision in English] (by [Name])
+
+**Action Items:**
+• [Task in English] - [Assignee]`
           }
         ],
         model: GROQ_MODEL,
         temperature: 0.3,
-        max_completion_tokens: 800,  // Reduced from 2048 for shorter summaries
+        max_completion_tokens: 1200,
         top_p: 0.9,
       });
 
@@ -169,12 +172,11 @@ Keep it SHORT and actionable. Maximum 5 bullet points total.`
       // If rate limited, wait before retrying
       if (error.message.includes('rate') || error.message.includes('429')) {
         if (attempt < maxRetries) {
-          const waitTime = Math.min(5000 * attempt, 30000); // Wait 5s, 10s, 15s
+          const waitTime = Math.min(5000 * attempt, 30000);
           console.log(`[Summarization] Rate limited, waiting ${waitTime/1000}s before retry...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       } else {
-        // For other errors, don't retry
         break;
       }
     }
@@ -185,67 +187,99 @@ Keep it SHORT and actionable. Maximum 5 bullet points total.`
 }
 
 /**
- * Creates CONCISE final summary from chunk summaries using Groq
+ * Creates Notion-style final summary from chunk summaries using Groq
  */
 async function createFinalSummary(chunkSummaries) {
   const combinedSummaries = chunkSummaries.join("\n\n---\n\n");
+
+  // Dynamic point limit based on meeting length
+  const numChunks = chunkSummaries.length;
+  const maxPoints = Math.min(Math.max(10, numChunks * 3), 30); // 10-30 points based on length
 
   try {
     const chatCompletion = await getGroqClient().chat.completions.create({
       messages: [
         {
           role: "system",
-          content: `You create SHORT, scannable meeting summaries. Use proper spacing in names. Be concise.`
+          content: `You create professional, scannable meeting summaries in Notion style. Support multilingual input (English, Hinglish, Marathi) but ALWAYS output in English. Use simple, clear language.`
         },
         {
           role: "user",
-          content: `Create a SHORT final summary from these segment summaries.
+          content: `Create a final meeting summary from these segment summaries.
 
-STRICT RULES:
-1. **BE CONCISE** - Keep it short and scannable
-2. **Proper spacing** - "Pratik mentioned" NOT "Pratikmentioned"
-3. **Use exact speaker names** from segments
-4. **Maximum 10 bullet points total** across ALL sections
-5. **Focus on OUTCOMES** not discussions
+LANGUAGE RULES:
+- Input may be English, Hinglish, or Marathi
+- ALWAYS output in ENGLISH ONLY
+- Use SIMPLE English - avoid complex words
+- Translate regional language content to English
 
-FORMAT (keep it SHORT):
+FORMATTING RULES:
+- Use Notion-style formatting (headings, bullets, emojis)
+- Keep it scannable - short points only
+- No long paragraphs or walls of text
+- Use emojis sparingly for visual markers
+- Balanced spacing - not too cramped, not too much
 
-## 📋 Meeting Summary
+CONTENT RULES:
+- Meeting length: ${numChunks} segments - use up to ${maxPoints} points total
+- Longer meetings = more points (don't limit to 10 if meeting is long)
+- Focus on outcomes, decisions, and actions
+- Skip small talk and repetition
 
-**Topic:** [One sentence - what was this meeting about]
+OUTPUT FORMAT:
 
-**Key Points:**
-- **[Name]** mentioned [one concise point]
-- **[Name]** suggested [one concise point]
+# 📝 Meeting Summary
 
-**Decisions:**
-- [Decision] - by **[Name]**
+**Meeting Topic:** [One clear sentence in simple English]
 
-**Action Items:**
-- [ ] [Task] - **[Name]**
+---
 
-**Next Steps:**
-1. [Next action with owner]
+## 🎯 Key Discussion Points
+
+• **[Name]** - [Short point in simple English]
+• **[Name]** - [Short point in simple English]
+[Add more based on meeting length - up to ${maxPoints} total across all sections]
+
+---
+
+## ✅ Decisions Made
+
+• [Decision in simple English] - **[Name]**
+• [Another decision if any]
+
+---
+
+## 📌 Action Items
+
+• [ ] [Task in simple English] - **[Assignee]**
+• [ ] [Another task] - **[Assignee]**
+
+---
+
+## 🔄 Next Steps
+
+1. [Clear next step with owner]
+2. [Another next step if any]
 
 ---
 
 SEGMENT SUMMARIES:
 ${combinedSummaries}
 
-Keep it SHORT - maximum 10 total bullet points. Use proper spacing in all names.`
+Remember: Simple English, scannable format, up to ${maxPoints} points for this ${numChunks}-segment meeting.`
         }
       ],
       model: GROQ_MODEL,
       temperature: 0.2,
-      max_completion_tokens: 1200,  // Reduced from 3000 for shorter summaries
+      max_completion_tokens: 3000, // Increased for longer meetings
       top_p: 0.9,
     });
 
     return chatCompletion.choices[0]?.message?.content || chunkSummaries.join("\n\n");
   } catch (error) {
     console.error("[Summarization] Error creating final summary:", error.message);
-    // Fallback: concatenate chunk summaries
-    return chunkSummaries.join("\n\n");
+    // Fallback: concatenate chunk summaries with proper formatting
+    return `# 📝 Meeting Summary\n\n${chunkSummaries.join("\n\n---\n\n")}`;
   }
 }
 
@@ -259,10 +293,17 @@ async function extractActionItems(chunkSummaries) {
     const chatCompletion = await getGroqClient().chat.completions.create({
       messages: [
         {
+          role: "system",
+          content: `Extract action items from multilingual meeting summaries. Support English, Hinglish, Marathi input but ALWAYS output in English using simple language.`
+        },
+        {
           role: "user",
           content: `Extract all action items from the meeting summaries.
-Format each action item as:
-- [Action item description] (Owner: [name if mentioned, else "Unassigned"])
+
+RULES:
+- Translate to ENGLISH if in other languages
+- Use SIMPLE English words
+- Format: - [Action description in English] (Owner: [Name or "Unassigned"])
 
 Return only the bullet list, no extra text.
 
@@ -272,7 +313,7 @@ ${combinedSummaries}`
       ],
       model: GROQ_MODEL,
       temperature: 0.2,
-      max_completion_tokens: 512,
+      max_completion_tokens: 800,
       top_p: 1,
     });
 
@@ -281,8 +322,8 @@ ${combinedSummaries}`
     // Parse into array
     return actionItemsText
       .split("\n")
-      .filter((line) => line.trim().startsWith("-"))
-      .map((line) => line.trim().substring(2)); // Remove "- " prefix
+      .filter((line) => line.trim().startsWith("-") || line.trim().startsWith("•"))
+      .map((line) => line.trim().replace(/^[-•]\s*/, "")); // Remove bullet prefix
   } catch (error) {
     console.error("[Summarization] Error extracting action items:", error.message);
     return [];
@@ -292,7 +333,7 @@ ${combinedSummaries}`
 /**
  * Extracts key points from final summary
  */
-function extractKeyPoints(summary) {
+function extractKeyPoints(summary, numChunks = 1) {
   // Simple extraction: find bullet points in summary
   const lines = summary.split("\n");
   const keyPoints = [];
@@ -300,11 +341,16 @@ function extractKeyPoints(summary) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.startsWith("•")) {
-      keyPoints.push(trimmed.substring(2).trim());
+      const point = trimmed.replace(/^[-*•]\s*/, "").trim();
+      if (point.length > 0) {
+        keyPoints.push(point);
+      }
     }
   }
 
-  return keyPoints.slice(0, 10); // Limit to top 10 key points
+  // Dynamic limit based on meeting length: 10-30 points
+  const maxKeyPoints = Math.min(Math.max(10, numChunks * 3), 30);
+  return keyPoints.slice(0, maxKeyPoints);
 }
 
 /**
