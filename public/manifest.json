@@ -8,7 +8,7 @@
     "storage",
     "scripting",
     "offscreen",
-    "activeTab",
+    "tabs",
     "notifications"
   ],
   "host_permissions": [
