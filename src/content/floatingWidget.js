@@ -347,8 +347,33 @@ if (!window.meetSyncWidgetInjected) {
         isRecording = true;
         updateRecordingUI(true, startTime);
       } else {
-        console.error('[FloatingWidget] Failed to start recording');
+        console.error('[FloatingWidget] Failed to start recording:', response?.error);
         chrome.storage.local.set({ recording: false });
+
+        // Show error message to user
+        const status = document.getElementById('meetsync-status');
+        if (status) {
+          const errorMsg = response?.error || 'Failed to start recording';
+          status.textContent = 'Click Extension Icon!';
+          status.style.color = '#fbbf24';
+          status.style.fontSize = '11px';
+
+          // Show notification
+          if (response?.error && response.error.includes('extension icon')) {
+            // User needs to click extension icon first
+            setTimeout(() => {
+              status.textContent = 'Ready';
+              status.style.color = '';
+              status.style.fontSize = '';
+            }, 5000);
+          } else {
+            setTimeout(() => {
+              status.textContent = 'Ready';
+              status.style.color = '';
+              status.style.fontSize = '';
+            }, 3000);
+          }
+        }
       }
     });
   }

@@ -108,47 +108,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         };
       }
 
-      await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
-
-      // Get Stream ID targeting the Active Tab (with proper error handling)
-      const streamId = await new Promise((resolve, reject) => {
-        chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id }, (id) => {
-          // Check for errors
-          if (chrome.runtime.lastError) {
-            console.error(
-              "[Background] ❌ Tab capture error:",
-              chrome.runtime.lastError.message
-            );
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-
-          // Check if ID is valid
-          if (!id) {
-            console.error("[Background] ❌ ERROR: No stream ID returned!");
-            reject(
-              new Error(
-                "Failed to get stream ID. Make sure you're on an active meeting."
-              )
-            );
-            return;
-          }
-
-          console.log("[Background] ✅ Got streamId:", id);
-          resolve(id);
-        });
-      });
+      // Check if tab is authorized (user clicked extension icon)
+      const storageKey = `tabStreamId_${tab.id}`;
+      const authData = await chrome.storage.local.get(storageKey);
+      let streamId = authData[storageKey];
 
       if (!streamId) {
-        console.error("[Background] ❌ ERROR: Stream ID is undefined!");
+        console.error(
+          "[Background] ❌ Tab not authorized. User must click extension icon first!"
+        );
         return {
           success: false,
           error:
-            "Failed to capture tab. Please refresh the meeting page and try again.",
+            "Please click the MeetSync extension icon (puzzle piece icon in toolbar) to enable recording!",
         };
       }
 
-      console.log("[Background] Got streamId:", streamId);
+      console.log("[Background] ✅ Using pre-authorized streamId:", streamId);
+
+      await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
 
       // Await offscreen start to ensure it actually starts
       console.log(
@@ -287,6 +265,60 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sessionTranscript.push(msg.data);
   }
 });
+// Handle extension icon click - this provides the user gesture needed for tabCapture
+chrome.action.onClicked.addListener(async (tab) => {
+  console.log("[Background] Extension icon clicked on tab:", tab.id);
+
+  // Check if on a supported meeting platform
+  const tabUrl = tab.url || "";
+  const isSupportedSite =
+    tabUrl.includes("meet.google.com") ||
+    tabUrl.includes("zoom.us") ||
+    tabUrl.includes("teams.microsoft.com");
+
+  if (!isSupportedSite) {
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icons/icon48.png",
+      title: "MeetSync",
+      message: "Please open a Google Meet, Zoom, or Teams meeting first!",
+    });
+    return;
+  }
+
+  // Pre-authorize tabCapture for this tab by calling getMediaStreamId
+  // This creates a user gesture context that persists for the tab
+  chrome.tabCapture.getMediaStreamId({ consumerTabId: tab.id }, (streamId) => {
+    if (chrome.runtime.lastError) {
+      console.error(
+        "[Background] Failed to authorize tab:",
+        chrome.runtime.lastError.message
+      );
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "icons/icon48.png",
+        title: "MeetSync Error",
+        message: "Failed to enable recording. Please try again.",
+      });
+      return;
+    }
+
+    console.log("[Background] ✅ Tab capture authorized! Stream ID:", streamId);
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icons/icon48.png",
+      title: "MeetSync Ready",
+      message: "Recording enabled! Click the floating widget to start recording.",
+    });
+
+    // Store the streamId for this tab
+    chrome.storage.local.set({
+      [`tabStreamId_${tab.id}`]: streamId,
+      [`tabAuthorized_${tab.id}`]: true,
+    });
+  });
+});
+
 // Open permissions page on install
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {

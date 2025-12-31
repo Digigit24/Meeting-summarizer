@@ -19,7 +19,9 @@
     "http://localhost:3001/*",
     "http://127.0.0.1:3001/*"
   ],
-  "action": {},
+  "action": {
+    "default_title": "Enable MeetSync Recording"
+  },
   "background": {
     "service_worker": "src/background/background.js",
     "type": "module"
