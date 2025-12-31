@@ -241,7 +241,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (res) {
         chrome.notifications.create({
           type: "basic",
-          iconUrl: "icons/icon48.png",
           title: "MeetSync Uploaded",
           message: "Meeting uploaded and processing started!",
         });
@@ -249,7 +248,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         console.error("[Background] Upload returned false/null.");
         chrome.notifications.create({
           type: "basic",
-          iconUrl: "icons/icon48.png",
           title: "MeetSync Upload Failed",
           message: "Will retry later. check pending uploads.",
         });
@@ -287,8 +285,8 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 
   // Pre-authorize tabCapture for this tab by calling getMediaStreamId
-  // This creates a user gesture context that persists for the tab
-  chrome.tabCapture.getMediaStreamId({ consumerTabId: tab.id }, (streamId) => {
+  // Omit consumerTabId to make streamId valid for offscreen documents
+  chrome.tabCapture.getMediaStreamId((streamId) => {
     if (chrome.runtime.lastError) {
       console.error(
         "[Background] Failed to authorize tab:",
@@ -296,7 +294,6 @@ chrome.action.onClicked.addListener(async (tab) => {
       );
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "icons/icon48.png",
         title: "MeetSync Error",
         message: "Failed to enable recording. Please try again.",
       });
@@ -306,7 +303,6 @@ chrome.action.onClicked.addListener(async (tab) => {
     console.log("[Background] ✅ Tab capture authorized! Stream ID:", streamId);
     chrome.notifications.create({
       type: "basic",
-      iconUrl: "icons/icon48.png",
       title: "MeetSync Ready",
       message: "Recording enabled! Click the floating widget to start recording.",
     });
