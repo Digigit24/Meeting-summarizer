@@ -25,6 +25,8 @@ export default defineConfig({
           if (chunkInfo.name === "scraper") return "src/content/scraper.js";
           if (chunkInfo.name === "floatingWidget")
             return "src/content/floatingWidget.js";
+          if (chunkInfo.name === "offscreen")
+            return "src/offscreen/offscreen.js";
           return "assets/[name]-[hash].js";
         },
       },
