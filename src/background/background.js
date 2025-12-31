@@ -32,7 +32,7 @@ async function setupOffscreenDocument(path) {
   await closeOffscreenDocument();
 
   // Small delay to ensure cleanup completes
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   if (creating) {
     await creating;
@@ -74,24 +74,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const isSupportedSite =
         tabUrl.includes("meet.google.com") ||
         tabUrl.includes("zoom.us") ||
-        tabUrl.includes("teams.microsoft.com");
+        tabUrl.includes("teams.microsoft.com") ||
+        tabUrl.includes("localhost") ||
+        tabUrl.includes("127.0.0.1");
 
       if (!isSupportedSite) {
-        console.error("[Background] ❌ ERROR: Not on a supported meeting platform!");
+        console.error(
+          "[Background] ❌ ERROR: Not on a supported meeting platform!"
+        );
         console.error("[Background] Current URL:", tabUrl);
-        console.error("[Background] Please navigate to Google Meet, Zoom, or Teams");
+        console.error(
+          "[Background] Please navigate to Google Meet, Zoom, or Teams"
+        );
         return {
           success: false,
-          error: "Please open a Google Meet, Zoom, or Microsoft Teams meeting first!"
+          error:
+            "Please open a Google Meet, Zoom, or Microsoft Teams meeting first!",
         };
       }
 
       // Check for Chrome internal pages
-      if (tabUrl.startsWith("chrome://") || tabUrl.startsWith("chrome-extension://")) {
-        console.error("[Background] ❌ ERROR: Cannot capture Chrome internal pages!");
+      if (
+        tabUrl.startsWith("chrome://") ||
+        tabUrl.startsWith("chrome-extension://")
+      ) {
+        console.error(
+          "[Background] ❌ ERROR: Cannot capture Chrome internal pages!"
+        );
         return {
           success: false,
-          error: "Cannot record from Chrome internal pages. Please go to a meeting."
+          error:
+            "Cannot record from Chrome internal pages. Please go to a meeting.",
         };
       }
 
@@ -102,7 +115,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id }, (id) => {
           // Check for errors
           if (chrome.runtime.lastError) {
-            console.error("[Background] ❌ Tab capture error:", chrome.runtime.lastError.message);
+            console.error(
+              "[Background] ❌ Tab capture error:",
+              chrome.runtime.lastError.message
+            );
             reject(new Error(chrome.runtime.lastError.message));
             return;
           }
@@ -110,7 +126,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           // Check if ID is valid
           if (!id) {
             console.error("[Background] ❌ ERROR: No stream ID returned!");
-            reject(new Error("Failed to get stream ID. Make sure you're on an active meeting."));
+            reject(
+              new Error(
+                "Failed to get stream ID. Make sure you're on an active meeting."
+              )
+            );
             return;
           }
 
@@ -123,21 +143,34 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         console.error("[Background] ❌ ERROR: Stream ID is undefined!");
         return {
           success: false,
-          error: "Failed to capture tab. Please refresh the meeting page and try again."
+          error:
+            "Failed to capture tab. Please refresh the meeting page and try again.",
         };
       }
 
       console.log("[Background] Got streamId:", streamId);
 
-      chrome.runtime.sendMessage({
+      // Await offscreen start to ensure it actually starts
+      console.log(
+        "[Background] Sending message to offscreen to start recording..."
+      );
+      const offscreenResponse = await chrome.runtime.sendMessage({
         target: "offscreen",
         type: "START_RECORDING",
         streamId: streamId,
         meetingId: msg.meetingName,
       });
 
+      if (!offscreenResponse || !offscreenResponse.success) {
+        throw new Error(
+          offscreenResponse?.error ||
+            "Failed to start recording in offscreen document."
+        );
+      }
+
       // Start Scraper (already injected via manifest.json)
       console.log("[Background] Starting scraper on tab:", tab.id);
+
       try {
         chrome.tabs.sendMessage(tab.id, { type: "START_SCRAPER" });
         console.log("[Background] START_SCRAPER message sent successfully");
@@ -154,7 +187,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         console.error("[Background] ❌ Recording start failed:", error);
         sendResponse({
           success: false,
-          error: error.message || "Failed to start recording. Please try again."
+          error:
+            error.message || "Failed to start recording. Please try again.",
         });
       });
     return true;
@@ -179,14 +213,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     console.log("=== [Background] STOP_RECORDING received ===");
     console.log("[Background] Meeting name:", msg.meetingId);
     console.log("[Background] Temp ID:", msg.tempMeetingId);
-    console.log("[Background] Transcript entries collected:", sessionTranscript.length);
+    console.log(
+      "[Background] Transcript entries collected:",
+      sessionTranscript.length
+    );
 
     // Stop recording in offscreen document
     chrome.runtime.sendMessage({ target: "offscreen", type: "STOP_RECORDING" });
 
     // Close offscreen document after a delay to ensure recording stops
     setTimeout(() => {
-      closeOffscreenDocument().catch(err =>
+      closeOffscreenDocument().catch((err) =>
         console.warn("[Background] Failed to close offscreen on stop:", err)
       );
     }, 500);
@@ -215,7 +252,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     console.log("[Background] 📤 Triggering uploadMeetingData...");
     console.log("[Background] Audio lookup ID:", tempId);
     console.log("[Background] Final meeting name:", finalName);
-    console.log("[Background] Note: Using", tempId === msg.tempMeetingId ? "tempMeetingId" : "meetingId as fallback", "for audio lookup");
+    console.log(
+      "[Background] Note: Using",
+      tempId === msg.tempMeetingId ? "tempMeetingId" : "meetingId as fallback",
+      "for audio lookup"
+    );
 
     uploadMeetingData(tempId, finalName).then((res) => {
       console.log("[Background] 📊 Upload result:", res);

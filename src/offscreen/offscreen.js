@@ -6,22 +6,22 @@ let currentMeetingId = null;
 let audioContext;
 let mixedStream;
 
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.target !== "offscreen") return;
 
   if (message.type === "START_RECORDING") {
-    try {
-      await startRecording(message.streamId, message.meetingId);
-      sendResponse({ success: true });
-    } catch (e) {
-      console.error("Failed to start in offscreen:", e);
-      sendResponse({ success: false, error: e.toString() });
-    }
+    startRecording(message.streamId, message.meetingId)
+      .then(() => sendResponse({ success: true }))
+      .catch((e) => {
+        console.error("Failed to start in offscreen:", e);
+        sendResponse({ success: false, error: e.toString() });
+      });
+    return true; // Keep message port open
   } else if (message.type === "STOP_RECORDING") {
     stopRecording();
     sendResponse({ success: true });
+    return true;
   }
-  return true;
 });
 
 async function startRecording(streamId, meetingId) {
@@ -93,7 +93,9 @@ async function startRecording(streamId, meetingId) {
   // "Send the recording chunk to IndexedDB every 5 seconds"
   recorder.ondataavailable = async (event) => {
     if (event.data.size > 0) {
-      console.log(`[Offscreen] 💾 Saving audio chunk - Size: ${event.data.size} bytes, Meeting ID: ${currentMeetingId}`);
+      console.log(
+        `[Offscreen] 💾 Saving audio chunk - Size: ${event.data.size} bytes, Meeting ID: ${currentMeetingId}`
+      );
       await saveChunk(currentMeetingId, event.data);
       console.log(`[Offscreen] ✅ Chunk saved successfully`);
     } else {
