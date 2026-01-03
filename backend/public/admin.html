@@ -51,6 +51,114 @@
         -webkit-font-smoothing: antialiased;
       }
 
+      /* Custom Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        animation: fadeIn 0.2s ease-out;
+      }
+      .modal-card {
+        background: white;
+        width: 100%;
+        max-width: 400px;
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        transform: scale(0.95);
+        animation: scaleUp 0.2s ease-out forwards;
+        text-align: center;
+      }
+      @keyframes scaleUp {
+        to {
+          transform: scale(1);
+        }
+      }
+
+      .modal-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .modal-icon.danger {
+        background: #fef2f2;
+        color: #ef4444;
+      }
+      .modal-icon.info {
+        background: #eff6ff;
+        color: #2563eb;
+      }
+
+      .modal-title {
+        font-family: var(--font-display);
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+      }
+      .modal-desc {
+        font-size: 15px;
+        color: var(--text-secondary);
+        margin-bottom: 32px;
+        line-height: 1.5;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+      }
+      .modal-btn {
+        flex: 1;
+        height: 44px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 15px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .modal-btn.cancel {
+        background: white;
+        border: 1px solid var(--border-light);
+        color: var(--text-secondary);
+      }
+      .modal-btn.cancel:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      .modal-btn.confirm-danger {
+        background: #ef4444;
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+      }
+      .modal-btn.confirm-danger:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+      }
+
+      .modal-btn.confirm-primary {
+        background: var(--text-primary);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);
+      }
+      .modal-btn.confirm-primary:hover {
+        background: #0f172a;
+        transform: translateY(-1px);
+      }
+
       /* Login Screen */
       #login-overlay {
         position: fixed;
@@ -541,6 +649,17 @@
         border-color: #ef4444;
       }
 
+      /* Custom Buttons */
+      .btn-primary {
+        border-color: var(--accent);
+        color: white;
+        background: var(--accent);
+      }
+      .btn-primary:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+      }
+
       .action-bar {
         margin-top: 32px;
         padding-top: 32px;
@@ -646,6 +765,25 @@
           />
           <button class="login-btn">Sign In</button>
         </form>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div id="m-icon" class="modal-icon danger">
+          <!-- Icon injected via JS -->
+        </div>
+        <div id="m-title" class="modal-title">Are you sure?</div>
+        <div id="m-desc" class="modal-desc">This action cannot be undone.</div>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" onclick="closeModal()">
+            Cancel
+          </button>
+          <button id="m-confirm" class="modal-btn confirm-danger">
+            Confirm
+          </button>
+        </div>
       </div>
     </div>
 
@@ -779,6 +917,51 @@
         sessionStorage.removeItem("auth_token");
         document.getElementById("login-overlay").style.display = "flex";
       }
+
+      /* Modal Logic */
+      let currentConfirmAction = null;
+
+      function showConfirm(type, title, msg, action) {
+        const m = document.getElementById("confirm-modal");
+        const icon = document.getElementById("m-icon");
+        const btn = document.getElementById("m-confirm");
+
+        document.getElementById("m-title").innerText = title;
+        document.getElementById("m-desc").innerText = msg;
+
+        // Stylize based on type
+        if (type === "danger") {
+          icon.className = "modal-icon danger";
+          icon.innerHTML = `<svg class="anim-icon" style="width:24px" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+          btn.className = "modal-btn confirm-danger";
+          btn.innerText = "Delete Forever";
+        } else if (type === "archive") {
+          icon.className = "modal-icon danger"; // Red for archive too
+          icon.innerHTML = `<svg class="anim-icon" style="width:24px" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`;
+          btn.className = "modal-btn confirm-danger";
+          btn.innerText = "Archive Meeting";
+        } else {
+          icon.className = "modal-icon info";
+          icon.innerHTML = `<svg class="anim-icon" style="width:24px" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
+          btn.className = "modal-btn confirm-primary";
+          btn.innerText = "Restore Meeting";
+        }
+
+        // Bind action
+        currentConfirmAction = action;
+        m.style.display = "flex";
+      }
+
+      function closeModal() {
+        document.getElementById("confirm-modal").style.display = "none";
+        currentConfirmAction = null;
+      }
+
+      // Confirm Button Click
+      document.getElementById("m-confirm").onclick = async () => {
+        if (currentConfirmAction) await currentConfirmAction();
+        closeModal();
+      };
 
       // Helper: Inject Authorization Header in all requests
       function getHeaders() {
@@ -920,9 +1103,14 @@
                            </button>
                            ${
                              isTrash
-                               ? `<button class="btn btn-primary" onclick="rest('${m.id}')">
+                               ? `
+                                <button class="btn btn-primary" onclick="rest('${m.id}')">
                                     <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Restore
-                                </button>`
+                                </button>
+                                <button class="btn btn-red" onclick="forceDel('${m.id}')">
+                                    <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete Forever
+                                </button>
+                               `
                                : `<button class="btn btn-red" onclick="arch('${m.id}')">
                                     <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Archive
                                 </button>`
@@ -1022,11 +1210,11 @@
         document.getElementById("tm-" + id).classList.toggle("open");
       }
 
+      // Updated Actions with Custom Confirm
       async function play(id) {
         const b = document.getElementById("p-" + id);
         if (b.innerHTML) return;
         try {
-          // Play needs auth too
           const r = await fetch(`${API}/audio/${id}`, {
             headers: getHeaders(),
           });
@@ -1041,29 +1229,43 @@
       }
 
       async function arch(id) {
-        if (confirm("Archive?")) {
-          const r = await fetch(`${API}/meetings/${id}`, {
-            method: "DELETE",
-            headers: getHeaders(),
-          });
-          if (r.status === 401) {
-            handleAuthError();
-            return;
+        showConfirm(
+          "archive",
+          "Archive Meeting?",
+          "This will move the meeting to the archived tab. You can restore it later.",
+          async () => {
+            const r = await fetch(`${API}/meetings/${id}`, {
+              method: "DELETE",
+              headers: getHeaders(),
+            });
+            if (r.status === 401) {
+              handleAuthError();
+              return;
+            }
+            load();
           }
-          load();
-        }
+        );
       }
+
       async function rest(id) {
-        const r = await fetch(`${API}/meetings/${id}/restore`, {
-          method: "POST",
-          headers: getHeaders(),
-        });
-        if (r.status === 401) {
-          handleAuthError();
-          return;
-        }
-        load();
+        showConfirm(
+          "restore",
+          "Restore Meeting?",
+          "This meeting will be moved back to your main feed.",
+          async () => {
+            const r = await fetch(`${API}/meetings/${id}/restore`, {
+              method: "POST",
+              headers: getHeaders(),
+            });
+            if (r.status === 401) {
+              handleAuthError();
+              return;
+            }
+            load();
+          }
+        );
       }
+
       async function dl(id) {
         const r = await fetch(`${API}/audio/${id}`, { headers: getHeaders() });
         if (r.status === 401) {
@@ -1077,6 +1279,25 @@
           a.download = `celiyo_${id}.webm`;
           a.click();
         }
+      }
+
+      async function forceDel(id) {
+        showConfirm(
+          "danger",
+          "Delete Permanently?",
+          "This action is IRREVERSIBLE. The meeting and all data will be destroyed forever.",
+          async () => {
+            const r = await fetch(`${API}/meetings/${id}/force`, {
+              method: "DELETE",
+              headers: getHeaders(),
+            });
+            if (r.status === 401) {
+              handleAuthError();
+              return;
+            }
+            load();
+          }
+        );
       }
 
       load();

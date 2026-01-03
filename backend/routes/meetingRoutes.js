@@ -87,9 +87,34 @@ router.delete("/meetings/:id/force", checkAuth, async (req, res) => {
     if (!meeting) return res.status(404).json({ error: "Not found" });
     if (!meeting.deleted_at)
       return res.status(400).json({ error: "Must archive first" });
+
+    // 1. Delete from S3 (Best Effort)
+    if (meeting.s3_url && meeting.s3_url.includes("amazonaws.com")) {
+      try {
+        const urlObj = new URL(meeting.s3_url);
+        // Clean Key
+        const s3Key = urlObj.pathname.startsWith("/")
+          ? urlObj.pathname.substring(1)
+          : urlObj.pathname;
+
+        console.log(`[Force Delete] Removing S3 Object: ${s3Key}`);
+        await s3.send(
+          new DeleteObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: s3Key,
+          })
+        );
+      } catch (s3Err) {
+        console.error("[Force Delete] Failed to delete S3 object:", s3Err);
+        // Start a "Soft Failure" log but proceed to delete DB record
+      }
+    }
+
+    // 2. Delete from DB
     await prisma.meeting.delete({ where: { id } });
     res.json({ message: "Permanently deleted", id });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Force delete failed" });
   }
 });
