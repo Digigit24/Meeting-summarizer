@@ -29,6 +29,7 @@ router.get("/meetings", checkAuth, async (req, res) => {
     const meetings = await prisma.meeting.findMany({
       orderBy: { created_at: "desc" },
     });
+    res.setHeader("Cache-Control", "no-store"); // Prevent 304 caching
     res.json({ meetings });
   } catch (error) {
     console.error("[Meetings API] Error fetching meetings:", error);
