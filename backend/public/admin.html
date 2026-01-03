@@ -738,7 +738,8 @@
         refresh: `<svg class="anim-icon icon-draw" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
       };
 
-      // Auth Check
+      // Initial UI State check
+      // If flag is missing, show login immediately.
       if (!sessionStorage.getItem("auth")) {
         document.getElementById("login-overlay").style.display = "flex";
       }
@@ -749,7 +750,6 @@
         const p = document.getElementById("p").value;
 
         try {
-          // Login via POST (Cookies set automatically)
           const res = await fetch(`${API}/admin/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -760,8 +760,8 @@
 
           if (d.success) {
             sessionStorage.setItem("auth", "1");
-            // We rely on HTTP cookie now, no need to store apiKey
-            location.reload();
+            document.getElementById("login-overlay").style.display = "none";
+            load(); // Load data immediately
           } else {
             alert("Invalid Credentials");
           }
@@ -776,15 +776,29 @@
         location.reload();
       }
 
+      // Handle session expiration without reload loop
+      function handleAuthError() {
+        sessionStorage.removeItem("auth");
+        document.getElementById("login-overlay").style.display = "flex";
+      }
+
       let data = [];
       let isTrash = false;
 
       async function load() {
         try {
-          // No headers needed, cookies handle auth
           const r = await fetch(`${API}/meetings`);
 
-          if (r.status === 401) return logout();
+          if (r.status === 401) {
+            handleAuthError();
+            return;
+          }
+
+          if (!r.ok) return;
+
+          // Success - Valid Cookie
+          sessionStorage.setItem("auth", "1");
+          document.getElementById("login-overlay").style.display = "none";
 
           const d = await r.json();
           data = Array.isArray(d) ? d : d.meetings || [];
@@ -837,7 +851,6 @@
           .map((m) => {
             const date = new Date(m.created_at);
             const info = parse(m);
-
             // Meta Calculations
             const trans = m.elevenlabs_transcript || m.client_transcript || "";
             const wc =
@@ -845,7 +858,6 @@
             const min = wc > 0 ? Math.ceil(wc / 200) : 0;
             const metaText =
               wc > 0 ? ` &bull; ${wc} words &bull; ${min} min read` : "";
-
             // Capitalization
             let title = m.name || "Untitled Session";
             if (title.length > 0)
@@ -872,7 +884,6 @@
                     
                     <div class="card-content">
                         ${transformMarkdown(m.summary)}
-                        
                         <div class="transcript-module" id="tm-${m.id}">
                             <div class="transcript-head" onclick="toggleT(event, '${
                               m.id
@@ -888,29 +899,22 @@
                                 ).replace(/\n/g, "<br>")}
                             </div>
                         </div>
-                        
                         <div class="action-bar">
                            <button class="btn" onclick="play('${m.id}')">
-                               <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                               Play Audio
+                               <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play Audio
                            </button>
-                           
                            <button class="btn btn-green" onclick="dl('${
                              m.id
                            }')">
-                               <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                               Download
+                               <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download
                            </button>
-                           
                            ${
                              isTrash
                                ? `<button class="btn btn-primary" onclick="rest('${m.id}')">
-                                    <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 
-                                    Restore
+                                    <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Restore
                                 </button>`
                                : `<button class="btn btn-red" onclick="arch('${m.id}')">
-                                    <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    Archive
+                                    <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Archive
                                 </button>`
                            }
                         </div>
@@ -1012,9 +1016,11 @@
         const b = document.getElementById("p-" + id);
         if (b.innerHTML) return;
         try {
-          // No headers needed
           const r = await fetch(`${API}/audio/${id}`);
-          if (r.status === 401) return logout();
+          if (r.status === 401) {
+            handleAuthError();
+            return;
+          }
           const d = await r.json();
           if (d.url)
             b.innerHTML = `<audio controls autoplay src="${d.url}" style="width:100%"></audio>`;
@@ -1024,7 +1030,10 @@
       async function arch(id) {
         if (confirm("Archive?")) {
           const r = await fetch(`${API}/meetings/${id}`, { method: "DELETE" });
-          if (r.status === 401) return logout();
+          if (r.status === 401) {
+            handleAuthError();
+            return;
+          }
           load();
         }
       }
@@ -1032,12 +1041,18 @@
         const r = await fetch(`${API}/meetings/${id}/restore`, {
           method: "POST",
         });
-        if (r.status === 401) return logout();
+        if (r.status === 401) {
+          handleAuthError();
+          return;
+        }
         load();
       }
       async function dl(id) {
         const r = await fetch(`${API}/audio/${id}`);
-        if (r.status === 401) return logout();
+        if (r.status === 401) {
+          handleAuthError();
+          return;
+        }
         const d = await r.json();
         if (d.url) {
           const a = document.createElement("a");
