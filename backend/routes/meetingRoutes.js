@@ -5,8 +5,6 @@ import { PrismaClient } from "@prisma/client";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Readable } from "stream";
-import { verifyToken } from "file:///d:/meeting_summarizer/backend/middleware/auth.js"; // Relative import fix
-// Actually standard import
 import { verifyToken as checkAuth } from "../middleware/auth.js";
 
 const router = express.Router();
