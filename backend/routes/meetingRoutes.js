@@ -136,7 +136,7 @@ router.delete("/meetings/:id/force", async (req, res) => {
   }
 });
 
-// Generate Presigned URL for S3 files (or return local URL)
+// Generate Presigned URL for S3 files (or return local/relative URL)
 router.get("/audio/:meetingId", async (req, res) => {
   try {
     const { meetingId } = req.params;
@@ -149,39 +149,86 @@ router.get("/audio/:meetingId", async (req, res) => {
       return res.status(404).json({ error: "Meeting not found" });
     }
 
-    const s3Url = meeting.s3_url;
+    let s3Url = meeting.s3_url;
+    if (!s3Url) {
+      return res
+        .status(404)
+        .json({ error: "No audio URL found for this meeting" });
+    }
 
-    // If it's a local URL, return it directly
-    if (s3Url.includes("localhost") || s3Url.includes("127.0.0.1")) {
-      const localPath = s3Url.split("/uploads/")[1];
-      // Construct the full local URL properly based on the request host if needed,
-      // but s3Url is likely already absolute or we can return a relative path.
-      // Better: return the full URL stored (assuming it's accessible) OR relative.
-      // The stored s3Url has http://localhost:PORT/...
+    // 1. Handle Local/Dev URLs -> Convert to Relative Path
+    // This ensures http://localhost:3001/uploads/x.webm works on https://prod.com/uploads/x.webm
+    if (
+      s3Url.includes("localhost") ||
+      s3Url.includes("127.0.0.1") ||
+      !s3Url.startsWith("http")
+    ) {
+      // If it's effectively a local path, try to extract the relative part
+      // e.g. "http://localhost:3001/uploads/file.webm" -> "/uploads/file.webm"
+      if (s3Url.includes("/uploads/")) {
+        const relativePath = "/uploads/" + s3Url.split("/uploads/")[1];
+        return res.json({ url: relativePath });
+      }
+      // If it doesn't start with http (already relative), return as is
       return res.json({ url: s3Url });
     }
 
-    // Extract S3 key from URL
-    const urlParts = s3Url.split(".com/");
-    if (urlParts.length < 2) {
-      // Fallback for unexpected formats
-      return res.json({ url: s3Url });
+    // 2. Handle S3 URLs
+    try {
+      // Try parsing as a URL
+      const urlObj = new URL(s3Url);
+      const host = urlObj.hostname;
+
+      // Basic check if it looks like AWS S3
+      if (host.includes("amazonaws.com")) {
+        // Extract Key: "https://bucket.s3.region.amazonaws.com/folder/key" -> "folder/key"
+        // pathname starts with /, remove it
+        const s3Key = urlObj.pathname.startsWith("/")
+          ? urlObj.pathname.substring(1)
+          : urlObj.pathname;
+
+        // Ensure AWS Client is configured before trying to sign
+        if (
+          process.env.AWS_ACCESS_KEY_ID &&
+          process.env.AWS_SECRET_ACCESS_KEY &&
+          process.env.AWS_BUCKET_NAME
+        ) {
+          const command = new GetObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: s3Key,
+          });
+          const signedUrl = await getSignedUrl(s3, command, {
+            expiresIn: 3600,
+          });
+          return res.json({ url: signedUrl });
+        }
+      }
+    } catch (parseError) {
+      console.warn(
+        "[Audio URL] URL parsing failed, returning raw URL:",
+        parseError.message
+      );
     }
 
-    const s3Key = urlParts[1];
-
-    // Generate Presigned URL
-    const command = new GetObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: s3Key,
-    });
-
-    // URL expires in 1 hour (3600 seconds)
-    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-
-    res.json({ url: signedUrl });
+    // Fallback: Return raw URL if it's not S3 or if signing fails/is skipped
+    return res.json({ url: s3Url });
   } catch (error) {
-    console.error("[Audio URL] Error:", error);
+    console.error("[Audio URL] Critical Error:", error);
+    // Even in critical error, try to return the raw URL from DB if we have the meeting object
+    try {
+      const fallbackMeeting = await prisma.meeting.findUnique({
+        where: { id: req.params.meetingId },
+      });
+      if (fallbackMeeting && fallbackMeeting.s3_url) {
+        // Attempt relative conversion one last time in fallback
+        if (fallbackMeeting.s3_url.includes("/uploads/")) {
+          const rp = "/uploads/" + fallbackMeeting.s3_url.split("/uploads/")[1];
+          return res.json({ url: rp });
+        }
+        return res.json({ url: fallbackMeeting.s3_url });
+      }
+    } catch (e) {}
+
     res.status(500).json({ error: "Failed to generate audio URL" });
   }
 });
