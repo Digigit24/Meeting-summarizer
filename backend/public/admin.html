@@ -738,9 +738,8 @@
         refresh: `<svg class="anim-icon icon-draw" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
       };
 
-      // Initial UI State check
-      // If flag is missing, show login immediately.
-      if (!sessionStorage.getItem("auth")) {
+      // UI State: Check for token
+      if (!sessionStorage.getItem("auth_token")) {
         document.getElementById("login-overlay").style.display = "flex";
       }
 
@@ -758,10 +757,10 @@
 
           const d = await res.json();
 
-          if (d.success) {
-            sessionStorage.setItem("auth", "1");
+          if (d.success && d.token) {
+            sessionStorage.setItem("auth_token", d.token); // Store Token safely in session
             document.getElementById("login-overlay").style.display = "none";
-            load(); // Load data immediately
+            load();
           } else {
             alert("Invalid Credentials");
           }
@@ -772,22 +771,35 @@
       }
 
       function logout() {
-        sessionStorage.removeItem("auth");
+        sessionStorage.removeItem("auth_token");
         location.reload();
       }
 
-      // Handle session expiration without reload loop
       function handleAuthError() {
-        sessionStorage.removeItem("auth");
+        sessionStorage.removeItem("auth_token");
         document.getElementById("login-overlay").style.display = "flex";
+      }
+
+      // Helper: Inject Authorization Header in all requests
+      function getHeaders() {
+        const token = sessionStorage.getItem("auth_token");
+        return {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
       }
 
       let data = [];
       let isTrash = false;
 
       async function load() {
+        // Need token to fetch data
+        if (!sessionStorage.getItem("auth_token")) return;
+
         try {
-          const r = await fetch(`${API}/meetings`);
+          const r = await fetch(`${API}/meetings`, {
+            headers: getHeaders(),
+          });
 
           if (r.status === 401) {
             handleAuthError();
@@ -796,8 +808,6 @@
 
           if (!r.ok) return;
 
-          // Success - Valid Cookie
-          sessionStorage.setItem("auth", "1");
           document.getElementById("login-overlay").style.display = "none";
 
           const d = await r.json();
@@ -1016,7 +1026,10 @@
         const b = document.getElementById("p-" + id);
         if (b.innerHTML) return;
         try {
-          const r = await fetch(`${API}/audio/${id}`);
+          // Play needs auth too
+          const r = await fetch(`${API}/audio/${id}`, {
+            headers: getHeaders(),
+          });
           if (r.status === 401) {
             handleAuthError();
             return;
@@ -1029,7 +1042,10 @@
 
       async function arch(id) {
         if (confirm("Archive?")) {
-          const r = await fetch(`${API}/meetings/${id}`, { method: "DELETE" });
+          const r = await fetch(`${API}/meetings/${id}`, {
+            method: "DELETE",
+            headers: getHeaders(),
+          });
           if (r.status === 401) {
             handleAuthError();
             return;
@@ -1040,6 +1056,7 @@
       async function rest(id) {
         const r = await fetch(`${API}/meetings/${id}/restore`, {
           method: "POST",
+          headers: getHeaders(),
         });
         if (r.status === 401) {
           handleAuthError();
@@ -1048,7 +1065,7 @@
         load();
       }
       async function dl(id) {
-        const r = await fetch(`${API}/audio/${id}`);
+        const r = await fetch(`${API}/audio/${id}`, { headers: getHeaders() });
         if (r.status === 401) {
           handleAuthError();
           return;
