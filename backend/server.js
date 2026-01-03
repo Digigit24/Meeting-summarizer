@@ -39,15 +39,26 @@ app.get("/admin", (req, res) => {
 
 // Auto-Seed Admin Function
 async function ensureAdmin() {
+  // Critical Check: ensure Prisma Client is generated
+  if (!prisma.admin) {
+    console.error("❌ CRITICAL ERROR: 'prisma.admin' is undefined.");
+    console.error(
+      "👉 ACTION REQUIRED: Run 'npx prisma generate' in your backend directory to update the Prisma Client."
+    );
+    return;
+  }
+
   try {
-    const email = "admin@celiyo.com";
+    const email = process.env.ADMIN_EMAIL || "admin@celiyo.com";
+    const passwordPlain = process.env.ADMIN_PASSWORD || "Letmegoin@0007";
+
     // Check if admin exists
     const admin = await prisma.admin.findUnique({ where: { email } });
     if (!admin) {
-      console.log("[Startup] Seeding Admin User...");
-      const password = await bcrypt.hash("Letmegoin@0007", 10);
+      console.log(`[Startup] Seeding Admin User (${email})...`);
+      const password = await bcrypt.hash(passwordPlain, 10);
       await prisma.admin.create({ data: { email, password } });
-      console.log("[Startup] Admin Created: " + email);
+      console.log("[Startup] Admin Created.");
     } else {
       console.log("[Startup] Admin User exists.");
     }
@@ -62,6 +73,12 @@ async function ensureAdmin() {
 // 2. Admin Login
 app.post("/api/admin/login", async (req, res) => {
   try {
+    if (!prisma.admin) {
+      throw new Error(
+        "Prisma Client out of sync. 'prisma.admin' is undefined. Run 'npx prisma generate'."
+      );
+    }
+
     let { email, password } = req.body;
     if (!email || !password)
       return res.status(400).json({ error: "Missing credentials" });
@@ -96,7 +113,9 @@ app.post("/api/admin/login", async (req, res) => {
     res.json({ success: true, token });
   } catch (e) {
     console.error("[Login Error]", e);
-    res.status(500).json({ error: "Internal Server Error" });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: e.message });
   }
 });
 
