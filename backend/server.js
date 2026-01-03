@@ -22,11 +22,11 @@ app.use((req, res, next) => {
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// Auth Middleware (Basic API Key)
+// Auth Middleware
 app.use((req, res, next) => {
   if (
     req.path === "/" ||
-    req.path.startsWith("/admin") || // Allows /admin and /admin/...
+    req.path.startsWith("/admin") ||
     req.path.startsWith("/uploads") ||
     req.path === "/api/admin/login"
   ) {
@@ -34,8 +34,11 @@ app.use((req, res, next) => {
   }
 
   const apiKey = req.headers["x-api-key"];
-  if (!apiKey || apiKey !== process.env.API_SECRET_KEY) {
-    if (process.env.API_SECRET_KEY && !req.path.includes("login")) {
+  const expectedKey = process.env.API_SECRET_KEY || "my-secret-extension-key";
+
+  if (!apiKey || apiKey !== expectedKey) {
+    // Only check if we are not in a loose dev environment, but here we enforce if key is present
+    if (apiKey !== expectedKey) {
       return res.status(401).json({ error: "Unauthorized" });
     }
   }
@@ -49,7 +52,10 @@ app.get("/admin", (req, res) => {
 
 // 2. Secure Login Route (Checks .env)
 app.post("/api/admin/login", (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+  email = (email || "").trim();
+  password = (password || "").trim();
+
   const validEmail = process.env.ADMIN_EMAIL || "admin@celiyo.com";
   const validPass = process.env.ADMIN_PASSWORD || "Letmegoin@0007";
 

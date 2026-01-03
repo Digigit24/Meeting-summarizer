@@ -5,9 +5,9 @@ import {
   updateMeetingStatus,
 } from "./db";
 
-// Try localhost first (Chrome extensions prefer this over 127.0.0.1)
-const BACKEND_URL = "http://localhost:3001/api";
-const FALLBACK_URL = "http://127.0.0.1:3001/api";
+// Production URL
+const BACKEND_URL = "https://meeting-summarizer.celiyo.com/api";
+const FALLBACK_URL = "https://meeting-summarizer.celiyo.com/api";
 
 export async function uploadMeetingData(tempMeetingId, meetingName) {
   try {
@@ -29,7 +29,9 @@ export async function uploadMeetingData(tempMeetingId, meetingName) {
     console.log("[Uploader] Transcript entries:", transcript.length);
 
     if (audioBlob.size === 0 && transcript.length === 0) {
-      console.error("[Uploader] ❌ UPLOAD FAILED: No data to upload - both audio and transcript are empty");
+      console.error(
+        "[Uploader] ❌ UPLOAD FAILED: No data to upload - both audio and transcript are empty"
+      );
       console.error("[Uploader] Meeting ID used for lookup:", tempMeetingId);
       return false;
     }
@@ -50,7 +52,12 @@ export async function uploadMeetingData(tempMeetingId, meetingName) {
 
     console.log("[Uploader] 📤 Uploading to backend:", BACKEND_URL + "/upload");
     console.log("[Uploader] FormData contents:");
-    console.log("  - audio file:", `meeting_${meetingName}.webm`, audioBlob.size, "bytes");
+    console.log(
+      "  - audio file:",
+      `meeting_${meetingName}.webm`,
+      audioBlob.size,
+      "bytes"
+    );
     console.log("  - name:", meetingName);
     console.log("  - transcript entries:", transcript.length);
 
@@ -67,9 +74,16 @@ export async function uploadMeetingData(tempMeetingId, meetingName) {
           "x-api-key": "my-secret-extension-key",
         },
       });
-      console.log("[Uploader] Response received - Status:", response.status, response.statusText);
+      console.log(
+        "[Uploader] Response received - Status:",
+        response.status,
+        response.statusText
+      );
     } catch (primaryError) {
-      console.warn("[Uploader] Primary URL failed, trying fallback:", primaryError.message);
+      console.warn(
+        "[Uploader] Primary URL failed, trying fallback:",
+        primaryError.message
+      );
       uploadUrl = `${FALLBACK_URL}/upload`;
       response = await fetch(uploadUrl, {
         method: "POST",
@@ -78,7 +92,11 @@ export async function uploadMeetingData(tempMeetingId, meetingName) {
           "x-api-key": "my-secret-extension-key",
         },
       });
-      console.log("[Uploader] Fallback response received - Status:", response.status, response.statusText);
+      console.log(
+        "[Uploader] Fallback response received - Status:",
+        response.status,
+        response.statusText
+      );
     }
 
     if (!response.ok) {
@@ -103,9 +121,12 @@ export async function uploadMeetingData(tempMeetingId, meetingName) {
     console.error("[Uploader] Error stack:", error.stack);
 
     // Check for network errors
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    if (error instanceof TypeError && error.message.includes("fetch")) {
       console.error("[Uploader] ⚠️ NETWORK ERROR: Cannot reach backend server");
-      console.error("[Uploader] Please ensure backend is running at:", BACKEND_URL);
+      console.error(
+        "[Uploader] Please ensure backend is running at:",
+        BACKEND_URL
+      );
     }
 
     updateMeetingStatus(tempMeetingId, "pending_upload");
