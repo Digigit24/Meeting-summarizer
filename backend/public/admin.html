@@ -3,36 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MeetSync AI - Intelligence Center</title>
+    <title>Celiyo Meet - Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
       rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
     <style>
       :root {
-        --bg-base: #020617;
-        --bg-surface: #0f172a;
-        --bg-elevated: #1e293b;
-        --accent-primary: #818cf8;
-        --accent-secondary: #c084fc;
-        --accent-glow: rgba(129, 140, 248, 0.15);
-        --text-vibrant: #f8fafc;
-        --text-muted: #94a3b8;
-        --text-dim: #64748b;
-        --border-subtle: rgba(255, 255, 255, 0.05);
-        --border-glow: rgba(129, 140, 248, 0.3);
-        --danger: #f43f5e;
-        --success: #10b981;
-        --warning: #fbbf24;
-        --gradient-nebula: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
-        --font-main: "Outfit", sans-serif;
-        --font-mono: "JetBrains Mono", monospace;
+        --bg-body: #f8fafc;
+        --bg-surface: #ffffff;
+
+        --text-primary: #0f172a;
+        --text-secondary: #334155;
+        --text-tertiary: #94a3b8;
+
+        --accent: #2563eb;
+        --accent-subtle: #eff6ff;
+
+        --border-light: #e2e8f0;
+
+        --radius-sm: 8px;
+        --radius-card: 16px;
+
+        --font-ui: "Inter", sans-serif;
+        --font-display: "Space Grotesk", sans-serif;
+
+        --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05),
+          0 2px 4px -2px rgb(0 0 0 / 0.05);
+        --shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.05),
+          0 8px 10px -6px rgb(0 0 0 / 0.01);
       }
 
       * {
@@ -42,917 +43,1018 @@
       }
 
       body {
-        font-family: var(--font-main);
-        background: var(--bg-base);
-        color: var(--text-vibrant);
+        font-family: var(--font-ui);
+        background: var(--bg-body);
+        color: var(--text-primary);
         line-height: 1.6;
-        min-height: 100vh;
-        overflow-x: hidden;
+        padding-bottom: 80px;
+        -webkit-font-smoothing: antialiased;
       }
 
-      .nebula-glow {
+      /* Login Screen */
+      #login-overlay {
         position: fixed;
-        top: -10%;
-        right: -10%;
-        width: 50%;
-        height: 50%;
-        background: radial-gradient(
-          circle,
-          var(--accent-glow) 0%,
-          transparent 70%
-        );
-        z-index: -1;
-        filter: blur(100px);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+      }
+
+      .login-card {
+        background: white;
+        padding: 48px;
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.1);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+
+      .login-logo {
+        width: 56px;
+        height: 56px;
+        background: var(--text-primary);
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      .login-title {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+      }
+
+      .login-input {
+        width: 100%;
+        padding: 14px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+        background: #f8fafc;
+      }
+      .login-input:focus {
+        border-color: var(--accent);
+        background: white;
+      }
+
+      .login-btn {
+        width: 100%;
+        padding: 14px;
+        background: var(--text-primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .login-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      /* SVG Icons */
+      .anim-icon {
+        width: 24px;
+        height: 24px;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .icon-draw path,
+      .icon-draw circle,
+      .icon-draw line,
+      .icon-draw polyline {
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: drawIcon 1.5s ease-out forwards;
+      }
+      @keyframes drawIcon {
+        to {
+          stroke-dashoffset: 0;
+        }
       }
 
       /* Header */
       header {
-        padding: 32px 0;
-        border-bottom: 1px solid var(--border-subtle);
-        background: rgba(2, 6, 23, 0.8);
-        backdrop-filter: blur(20px);
         position: sticky;
         top: 0;
-        z-index: 1000;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        z-index: 100;
+        border-bottom: 1px solid var(--border-light);
+        padding: 16px 0;
       }
 
-      .header-inner {
-        max-width: 1400px;
+      .container {
+        max-width: 1280px;
         margin: 0 auto;
-        padding: 0 48px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        padding: 0 24px;
+        width: 100%;
       }
 
-      .brand {
+      .header-row {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
         gap: 16px;
       }
 
-      .brand-logo {
-        width: 52px;
-        height: 52px;
-        background: var(--gradient-nebula);
-        border-radius: 14px;
+      .logo-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--text-primary);
+        border-radius: 8px;
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        box-shadow: 0 0 30px var(--accent-glow);
-        animation: logo-shine 3s infinite alternate;
       }
-
-      @keyframes logo-shine {
-        from {
-          box-shadow: 0 0 20px var(--accent-glow);
-          transform: scale(1);
-        }
-        to {
-          box-shadow: 0 0 40px rgba(129, 140, 248, 0.4);
-          transform: scale(1.02);
-        }
-      }
-
-      .brand-text h1 {
-        font-size: 26px;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-        background: var(--gradient-nebula);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .brand-text span {
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        color: var(--text-dim);
-        font-weight: 600;
-      }
-
-      .nav-actions {
-        display: flex;
-        align-items: center;
-        gap: 32px;
-      }
-
-      .stat-node .val {
-        font-size: 32px;
+      .logo-text {
+        font-family: var(--font-display);
+        font-size: 20px;
         font-weight: 700;
-        color: var(--text-vibrant);
-        font-family: var(--font-mono);
+        color: var(--text-primary);
       }
 
-      .stat-node .lbl {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--text-dim);
-        margin-top: 4px;
-      }
-
-      .nav-link {
-        text-decoration: none;
-        color: var(--text-muted);
-        font-size: 15px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        cursor: pointer;
+      .nav-group {
         display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 20px;
+        gap: 4px;
+        background: #f1f5f9;
+        padding: 4px;
         border-radius: 12px;
       }
-
-      .nav-link:hover,
-      .nav-link.active {
-        color: var(--accent-primary);
-        background: rgba(129, 140, 248, 0.1);
-      }
-
-      .nav-link.trash-link {
-        background: rgba(244, 63, 94, 0.1);
-        border: 1px solid rgba(244, 63, 94, 0.2);
-        color: var(--danger);
-      }
-
-      .nav-link.trash-link.active {
-        background: var(--danger);
-        color: white;
-      }
-
-      .trash-count {
-        background: rgba(255, 255, 255, 0.2);
-        padding: 3px 10px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      /* Main Layout */
-      main {
-        max-width: 1400px;
-        margin: 60px auto;
-        padding: 0 48px;
-      }
-
-      .section-intro {
-        margin-bottom: 48px;
-      }
-
-      .section-intro h2 {
-        font-size: 36px;
-        font-weight: 700;
-        margin-bottom: 12px;
-        letter-spacing: -1px;
-      }
-
-      .section-intro p {
-        color: var(--text-muted);
-        font-size: 17px;
-      }
-
-      /* Meeting Entry */
-      .meeting-entry {
-        position: relative;
-        padding: 60px 0;
-        border-top: 2px solid var(--border-subtle);
-        transition: all 0.4s ease;
-      }
-
-      .meeting-entry:first-child {
-        border-top: none;
-      }
-
-      .meeting-entry:hover {
-        background: rgba(129, 140, 248, 0.03);
-      }
-
-      .meeting-topic {
-        display: inline-block;
+      .nav-pill {
+        padding: 6px 16px;
         font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        color: var(--accent-primary);
-        background: rgba(129, 140, 248, 0.1);
-        padding: 8px 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
         border-radius: 8px;
-        margin-bottom: 16px;
-        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .nav-pill:hover {
+        color: var(--text-primary);
+      }
+      .nav-pill.active {
+        background: white;
+        color: var(--text-primary);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
 
-      .meeting-title {
-        font-size: 32px;
-        font-weight: 700;
-        color: var(--text-vibrant);
-        margin-bottom: 20px;
-        line-height: 1.3;
-        letter-spacing: -0.5px;
-      }
-
-      .meeting-meta-row {
+      /* Filters responsive */
+      .toolbar {
+        margin: 32px 0;
         display: flex;
-        gap: 32px;
-        margin-bottom: 32px;
+        gap: 12px;
+        align-items: center;
         flex-wrap: wrap;
       }
 
-      .meta-tag {
+      .search-bar {
+        flex: 1 1 300px; /* Grow, Shrink, Basis */
+        height: 48px;
+        background: white;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 15px;
-        color: var(--text-muted);
-        font-family: var(--font-mono);
-      }
-
-      .meta-tag i {
-        width: 20px;
-        color: var(--accent-secondary);
-        font-size: 16px;
-      }
-
-      /* Action Buttons */
-      .meeting-actions {
-        display: flex;
+        padding: 0 16px;
         gap: 12px;
-        margin-bottom: 40px;
+        transition: all 0.2s;
       }
-
-      .action-btn {
-        padding: 14px 24px;
-        border-radius: 12px;
-        border: 1px solid var(--border-subtle);
-        background: transparent;
-        color: var(--text-muted);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 15px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        font-family: var(--font-main);
-        overflow: hidden;
-        position: relative;
+      .search-bar:focus-within {
+        border-color: var(--text-tertiary);
+        box-shadow: 0 0 0 3px #f1f5f9;
       }
-
-      .action-btn:hover {
-        border-color: var(--accent-primary);
-        color: var(--accent-primary);
-        background: rgba(129, 140, 248, 0.1);
-        transform: translateY(-2px);
-      }
-
-      .action-btn.delete-btn:hover {
-        border-color: var(--danger);
-        color: var(--danger);
-        background: rgba(244, 63, 94, 0.1);
-      }
-
-      .action-btn.restore-btn {
-        background: var(--gradient-nebula);
-        color: white;
+      .search-input {
+        flex: 1;
         border: none;
+        font-size: 15px;
+        outline: none;
+        color: var(--text-primary);
+        font-family: var(--font-ui);
+        min-width: 0;
       }
 
-      .action-btn.restore-btn:hover {
-        opacity: 0.9;
+      .date-select {
+        height: 48px;
+        border: 1px solid var(--border-light);
+        background: white;
+        border-radius: var(--radius-sm);
+        padding: 0 16px;
+        font-family: var(--font-ui);
+        color: var(--text-secondary);
+        outline: none;
+        flex: 0 1 auto; /* Allow shrink but prefer width */
       }
 
-      /* Intelligence Sections */
-      .intelligence-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 32px;
-        margin-top: 40px;
-      }
-
-      .intel-section {
-        background: var(--bg-surface);
-        border: 1px solid var(--border-subtle);
-        border-radius: 20px;
-        padding: 32px;
+      /* Card Responsive */
+      .meeting-card {
+        background: white;
+        border-radius: var(--radius-card);
+        margin-bottom: 24px;
         transition: all 0.3s ease;
+        border: 1px solid transparent;
+        box-shadow: var(--shadow-card);
+      }
+      .meeting-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
       }
 
-      .intel-section:hover {
-        border-color: rgba(129, 140, 248, 0.3);
-        box-shadow: 0 0 40px rgba(129, 140, 248, 0.05);
+      .card-header {
+        padding: 24px;
+        cursor: pointer;
       }
 
-      .intel-header {
+      .header-meta {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
-        cursor: pointer;
-        user-select: none;
+        margin-bottom: 12px;
       }
-
-      .intel-title {
+      .date-badge {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-tertiary);
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
       }
-
-      .intel-title i {
-        font-size: 20px;
-        color: var(--accent-secondary);
+      .expand-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        color: var(--text-secondary);
+        flex-shrink: 0;
       }
-
-      .intel-title h3 {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-vibrant);
-      }
-
-      .expand-toggle {
-        font-size: 14px;
-        color: var(--text-dim);
-        transition: transform 0.3s ease;
-      }
-
-      .expand-toggle.expanded {
+      .meeting-card.active .expand-circle {
+        background: var(--text-primary);
+        color: white;
+        border-color: var(--text-primary);
         transform: rotate(180deg);
       }
 
-      .intel-content {
-        font-size: 16px;
-        line-height: 1.8;
-        color: var(--text-muted);
-        max-height: 2000px;
-        overflow-y: hidden;
-        padding-right: 12px;
-        transition: max-height 0.5s ease-in-out, opacity 0.3s ease;
+      .topic-headline {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.3;
+        margin-bottom: 8px;
       }
 
-      .intel-content.collapsed {
-        max-height: 120px;
+      .topic-preview {
+        font-size: 15px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
         overflow: hidden;
+      }
+
+      /* Expanded Content */
+      .card-content {
+        display: none;
+        padding: 0 24px 32px;
+        border-top: 1px solid var(--border-light);
+        animation: fadeIn 0.5s ease;
+      }
+      .meeting-card.active .card-content {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Summary Blocks */
+      .summary-block {
+        margin-top: 32px;
+        padding-left: 0;
         position: relative;
-        opacity: 0.8;
       }
 
-      .intel-content.collapsed::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 60px;
-        background: linear-gradient(to bottom, transparent, var(--bg-surface));
+      .block-header-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
       }
 
-      /* Audio Player Container */
-      .audio-player {
-        background: var(--bg-elevated);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 32px;
-        border: 1px solid var(--border-subtle);
+      .block-icon {
+        position: relative;
+        width: 32px;
+        height: 32px;
+        color: var(--accent);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .block-title {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.4;
+      }
+
+      /* Readable Text Lists */
+      .readable-text ul {
+        list-style: none;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
       }
 
-      audio {
-        width: 100%;
-        height: 48px;
-        border-radius: 12px;
-        filter: invert(1) hue-rotate(180deg) brightness(1.5);
+      .readable-text li {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        text-align: left;
       }
 
-      /* Notion-Style Content */
-      .notion-content h1 {
-        font-size: 28px;
-        font-weight: 800;
-        color: var(--text-vibrant);
-        margin: 28px 0 16px;
+      .readable-text li .bullet {
+        flex-shrink: 0;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--border-light);
+        border: 1px solid var(--text-tertiary);
+        margin-top: 10px;
       }
-      .notion-content h2 {
-        font-size: 24px;
+      .readable-text li .checkbox {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        border: 1.5px solid var(--text-tertiary);
+        border-radius: 4px;
+        margin-top: 4px;
+      }
+      .readable-text li .num-marker {
         font-weight: 700;
-        color: var(--text-vibrant);
-        margin: 24px 0 12px;
+        color: var(--text-primary);
+        min-width: 24px;
       }
-      .notion-content h3 {
-        font-size: 20px;
+
+      .readable-text strong {
+        color: var(--text-primary);
+        font-weight: 700;
+      }
+      .readable-text p {
+        margin-bottom: 24px;
+      }
+
+      /* Transcript Highlight */
+      .transcript-module {
+        width: 100%;
+        display: block;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 32px;
+        transition: all 0.2s;
+      }
+      .transcript-module:hover {
+        border-color: var(--accent);
+        background: #f1f5f9;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+
+      .transcript-head {
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         font-weight: 600;
-        color: var(--accent-primary);
-        margin: 20px 0 10px;
+        cursor: pointer;
+        user-select: none;
+        color: var(--text-primary);
+        font-size: 15px;
       }
-      .notion-content ul,
-      .notion-content ol {
-        padding-left: 24px;
-        margin: 16px 0;
+
+      .transcript-body {
+        display: none;
+        padding: 24px;
+        border-top: 1px solid #e2e8f0;
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        line-height: 1.8;
+        color: var(--text-secondary);
+        max-height: 400px;
+        overflow-y: auto;
+        background: white;
       }
-      .notion-content li {
-        margin-bottom: 10px;
-        line-height: 1.7;
+      .transcript-module.open .transcript-body {
+        display: block;
       }
-      .notion-content strong {
-        color: var(--accent-secondary);
+
+      /* Buttons & Footer */
+      .btn {
+        height: 40px;
+        padding: 0 20px;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid var(--border-light);
+        background: white;
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+      .btn:hover {
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+      }
+
+      /* Colored Buttons */
+      .btn-green {
+        border-color: #22c55e60;
+        color: #166534;
+        background: #f0fdf4;
+      }
+      .btn-green:hover {
+        background: #22c55e;
+        color: white;
+        border-color: #22c55e;
+      }
+
+      .btn-red {
+        border-color: #ef444460;
+        color: #991b1b;
+        background: #fef2f2;
+      }
+      .btn-red:hover {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+      }
+
+      .action-bar {
+        margin-top: 32px;
+        padding-top: 32px;
+        border-top: 1px solid var(--border-light);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .btn-logout {
+        background: transparent;
+        border: none;
         font-weight: 600;
-      }
-      .notion-content blockquote {
-        border-left: 4px solid var(--accent-primary);
-        padding: 16px 20px;
-        margin: 20px 0;
-        color: var(--text-muted);
-        font-style: italic;
-        background: rgba(129, 140, 248, 0.05);
-        border-radius: 8px;
-      }
-      .notion-content code {
-        background: var(--bg-elevated);
-        color: var(--accent-primary);
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-family: var(--font-mono);
+        color: #ef4444;
+        cursor: pointer;
+        padding: 8px 16px;
         font-size: 14px;
       }
-
-      /* Status UI */
-      .status-hero {
-        text-align: center;
-        padding: 120px 0;
-        max-width: 600px;
-        margin: 0 auto;
-      }
-      .status-hero i {
-        font-size: 100px;
-        background: var(--gradient-nebula);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 32px;
-        opacity: 0.6;
-      }
-      .status-hero h3 {
-        font-size: 28px;
-        margin-bottom: 16px;
-        font-weight: 700;
+      .btn-logout:hover {
+        color: #dc2626;
+        text-decoration: underline;
       }
 
-      .loading-shimmer {
-        height: 300px;
-        background: linear-gradient(
-          90deg,
-          rgba(255, 255, 255, 0) 0%,
-          rgba(255, 255, 255, 0.05) 50%,
-          rgba(255, 255, 255, 0) 100%
-        );
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-        border-radius: 20px;
-        margin-bottom: 32px;
-      }
-
-      @keyframes loading {
-        0% {
-          background-position: 200% 0;
+      /* Media Queries */
+      @media (max-width: 640px) {
+        .nav-group {
+          width: 100%;
+          justify-content: center;
         }
-        100% {
-          background-position: -200% 0;
+        .toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .date-select {
+          width: 100%;
+        }
+        .card-header {
+          padding: 20px;
+        }
+        .card-content {
+          padding: 0 20px 24px;
+        }
+        .topic-headline {
+          font-size: 18px;
+        }
+        .block-title {
+          font-size: 16px;
+        }
+        .readable-text li {
+          font-size: 15px;
+        }
+        .action-bar {
+          justify-content: stretch;
+        }
+        .action-bar .btn {
+          flex: 1;
+          justify-content: center;
         }
       }
     </style>
   </head>
   <body>
-    <div class="nebula-glow"></div>
+    <!-- Login Overlay -->
+    <div id="login-overlay" style="display: none">
+      <div class="login-card">
+        <div class="login-logo">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+        </div>
+        <div class="login-title">Celiyo Meet</div>
+        <p
+          style="
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 15px;
+          "
+        >
+          Admin Intelligence Access
+        </p>
+        <form onsubmit="doLogin(event)">
+          <input
+            class="login-input"
+            type="email"
+            id="u"
+            placeholder="Admin Email"
+            required
+          />
+          <input
+            class="login-input"
+            type="password"
+            id="p"
+            placeholder="Password"
+            required
+          />
+          <button class="login-btn">Sign In</button>
+        </form>
+      </div>
+    </div>
 
     <header>
-      <div class="header-inner">
-        <div class="brand">
-          <div class="brand-logo">
-            <i class="fas fa-infinity"></i>
+      <div class="container header-row">
+        <div class="logo-group">
+          <div class="logo-icon">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
           </div>
-          <div class="brand-text">
-            <span>Admin Central</span>
-            <h1>MeetSync AI</h1>
+          <div class="logo-text">Celiyo Meet</div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-pill active" id="tab-feed" onclick="switchTab(false)">
+            Feed
+          </div>
+          <div class="nav-pill" id="tab-arch" onclick="switchTab(true)">
+            Archived
           </div>
         </div>
 
-        <div class="nav-actions">
-          <div class="stat-node">
-            <div class="val" id="total-meetings">00</div>
-            <div class="lbl">Active Intel</div>
-          </div>
-
-          <a class="nav-link active" id="active-nav" onclick="setView(false)">
-            <i class="fas fa-bolt"></i> Activity
-          </a>
-
-          <a class="nav-link trash-link" id="trash-nav" onclick="setView(true)">
-            <i class="fas fa-trash-alt"></i> Archived
-            <span class="trash-count" id="deleted-badge" style="display: none"
-              >0</span
-            >
-          </a>
-
-          <a class="nav-link" onclick="logout()" style="cursor: pointer; color: var(--danger);">
-            <i class="fas fa-sign-out-alt"></i> Logout
-          </a>
+        <div>
+          <button class="btn-logout" onclick="logout()">Logout</button>
         </div>
       </div>
     </header>
 
-    <main>
-      <div class="section-intro">
-        <h2 id="view-title">Intelligence Feed</h2>
-        <p id="view-desc">
-          Live stream of processed meeting intelligence with AI-powered neural
-          summaries.
-        </p>
+    <div class="container">
+      <div class="toolbar">
+        <div class="search-bar">
+          <svg
+            class="anim-icon"
+            style="width: 18px; color: #94a3b8"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            class="search-input"
+            id="search"
+            placeholder="Search insights..."
+            onkeyup="refresh()"
+          />
+        </div>
+        <input
+          type="date"
+          class="date-select"
+          id="d-start"
+          onchange="refresh()"
+        />
+        <input
+          type="date"
+          class="date-select"
+          id="d-end"
+          onchange="refresh()"
+        />
+        <button
+          class="btn"
+          style="width: 48px; padding: 0; justify-content: center"
+          onclick="reset()"
+        >
+          <svg class="anim-icon" style="width: 16px" viewBox="0 0 24 24">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+        </button>
       </div>
 
-      <div id="meetings-list">
-        <div class="loading-shimmer"></div>
-        <div class="loading-shimmer"></div>
-      </div>
-    </main>
+      <div id="feed"></div>
+    </div>
 
     <script>
-      const API_BASE = "http://localhost:3001/api";
-      const API_KEY = "my-secret-extension-key";
+      const API = "http://localhost:3001/api";
+      const ICONS = {
+        summary: `<svg class="anim-icon icon-draw" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+        target: `<svg class="anim-icon icon-draw" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+        check: `<svg class="anim-icon icon-draw" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+        pin: `<svg class="anim-icon icon-draw" viewBox="0 0 24 24"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>`,
+        refresh: `<svg class="anim-icon icon-draw" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
+      };
 
-      const AUTH_HEADER = { "x-api-key": API_KEY };
-      const JSON_HEADERS = { ...AUTH_HEADER, Accept: "application/json" };
-
-      // Admin authentication credentials
-      const ADMIN_EMAIL = "admin@thedigitechsolutions.com";
-      const ADMIN_PASSWORD = "Letmegoin@0007";
-
-      let allMeetings = [];
-      let showingDeleted = false;
-
-      // Check authentication on page load
-      function checkAuthentication() {
-        const isAuthenticated = sessionStorage.getItem('adminAuthenticated');
-        if (!isAuthenticated) {
-          showLoginScreen();
-          return false;
-        }
-        return true;
+      // Auth Check
+      if (!sessionStorage.getItem("auth")) {
+        document.getElementById("login-overlay").style.display = "flex";
       }
 
-      function showLoginScreen() {
-        document.body.innerHTML = `
-          <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-base);">
-            <div style="width: 400px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 48px; box-shadow: 0 0 60px rgba(129, 140, 248, 0.1);">
-              <div style="text-align: center; margin-bottom: 32px;">
-                <div style="width: 80px; height: 80px; margin: 0 auto 24px; background: var(--gradient-nebula); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 0 30px var(--accent-glow);">
-                  <i class="fas fa-lock"></i>
-                </div>
-                <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px; background: var(--gradient-nebula); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Admin Access</h1>
-                <p style="color: var(--text-dim); font-size: 14px;">Authorized personnel only</p>
-              </div>
+      async function doLogin(e) {
+        e.preventDefault();
+        const u = document.getElementById("u").value;
+        const p = document.getElementById("p").value;
 
-              <div id="login-error" style="display: none; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); color: var(--danger); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; text-align: center;">
-                <i class="fas fa-exclamation-triangle"></i> Invalid credentials
-              </div>
+        try {
+          const res = await fetch(`${API}/admin/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: u, password: p }),
+          });
 
-              <form id="login-form" style="margin-bottom: 24px;">
-                <div style="margin-bottom: 20px;">
-                  <label style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px;">Email Address</label>
-                  <input type="email" id="admin-email" required autocomplete="username" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; color: var(--text-vibrant); font-size: 15px; font-family: var(--font-main); outline: none; transition: all 0.3s ease;" placeholder="Enter your email" />
-                </div>
+          const d = await res.json();
 
-                <div style="margin-bottom: 24px;">
-                  <label style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px;">Password</label>
-                  <input type="password" id="admin-password" required autocomplete="current-password" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; color: var(--text-vibrant); font-size: 15px; font-family: var(--font-main); outline: none; transition: all 0.3s ease;" placeholder="Enter your password" />
-                </div>
-
-                <button type="submit" style="width: 100%; background: var(--gradient-nebula); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; font-family: var(--font-main); cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(129, 140, 248, 0.3);">
-                  <i class="fas fa-sign-in-alt"></i> Sign In
-                </button>
-              </form>
-
-              <div style="text-align: center;">
-                <p style="font-size: 11px; color: var(--text-dim);">The Digitech Solutions © 2024</p>
-              </div>
-            </div>
-          </div>
-        `;
-
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const email = document.getElementById('admin-email').value;
-          const password = document.getElementById('admin-password').value;
-          const errorDiv = document.getElementById('login-error');
-
-          if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-            sessionStorage.setItem('adminAuthenticated', 'true');
+          if (d.success) {
+            sessionStorage.setItem("auth", "1");
+            sessionStorage.setItem("apiKey", d.apiKey); // Store key
             location.reload();
           } else {
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-              errorDiv.style.display = 'none';
-            }, 3000);
+            alert("Invalid Credentials");
           }
-        });
-      }
-
-      async function loadMeetings() {
-        try {
-          const response = await fetch(`${API_BASE}/meetings`, {
-            headers: JSON_HEADERS,
-          });
-          if (!response.ok)
-            throw new Error(`Access Denied: ${response.status}`);
-
-          const data = await response.json();
-          allMeetings = Array.isArray(data) ? data : data.meetings || [];
-
-          const active = allMeetings.filter((m) => !m.deleted_at);
-          const deleted = allMeetings.filter((m) => m.deleted_at);
-
-          document.getElementById("total-meetings").textContent = active.length
-            .toString()
-            .padStart(2, "0");
-          const badge = document.getElementById("deleted-badge");
-          if (deleted.length > 0) {
-            badge.textContent = deleted.length;
-            badge.style.display = "inline-block";
-          } else {
-            badge.style.display = "none";
-          }
-
-          renderMeetings(showingDeleted ? deleted : active);
-        } catch (error) {
-          console.error("[Admin] Load Fail:", error);
-          showError(error.message);
+        } catch (err) {
+          console.error(err);
+          alert("Login Error");
         }
       }
 
-      function setView(isDeleted) {
-        showingDeleted = isDeleted;
-        document
-          .getElementById("active-nav")
-          .classList.toggle("active", !isDeleted);
-        document
-          .getElementById("trash-nav")
-          .classList.toggle("active", isDeleted);
-        document.getElementById("view-title").textContent = isDeleted
-          ? "Recently Deleted"
-          : "Intelligence Feed";
-        document.getElementById("view-desc").textContent = isDeleted
-          ? "Archived intelligence segments pending automatic purging."
-          : "Live stream of processed meeting intelligence with AI-powered neural summaries.";
-        renderMeetings(
-          allMeetings.filter((m) => (isDeleted ? m.deleted_at : !m.deleted_at))
-        );
+      function logout() {
+        sessionStorage.removeItem("auth");
+        sessionStorage.removeItem("apiKey");
+        location.reload();
       }
 
-      function renderMeetings(meetings) {
-        const container = document.getElementById("meetings-list");
-        if (meetings.length === 0) {
-          container.innerHTML = `<div class="status-hero"><i class="fas fa-ghost"></i><h3>No Intelligence Found</h3><p>${
-            showingDeleted
-              ? "No archived meetings at the moment."
-              : "Start recording to populate your intelligence feed."
-          }</p></div>`;
+      let data = [];
+      let isTrash = false;
+
+      async function load() {
+        try {
+          const key = sessionStorage.getItem("apiKey") || "";
+          const r = await fetch(`${API}/meetings`, {
+            headers: { "x-api-key": key },
+          });
+          const d = await r.json();
+          data = Array.isArray(d) ? d : d.meetings || [];
+          refresh();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function refresh() {
+        const q = document.getElementById("search").value.toLowerCase();
+        const ds = document.getElementById("d-start").value;
+        const de = document.getElementById("d-end").value;
+
+        const filtered = data.filter((m) => {
+          if (isTrash !== !!m.deleted_at) return false;
+          if (ds && new Date(m.created_at) < new Date(ds)) return false;
+          if (de && new Date(m.created_at) > new Date(de)) return false;
+          if (q && !(m.name + m.summary).toLowerCase().includes(q))
+            return false;
+          return true;
+        });
+        render(filtered);
+      }
+
+      function reset() {
+        document.querySelectorAll("input").forEach((i) => (i.value = ""));
+        refresh();
+      }
+
+      function switchTab(trash) {
+        isTrash = trash;
+        document.getElementById("tab-feed").className = `nav-pill ${
+          !trash ? "active" : ""
+        }`;
+        document.getElementById("tab-arch").className = `nav-pill ${
+          trash ? "active" : ""
+        }`;
+        refresh();
+      }
+
+      function render(list) {
+        const con = document.getElementById("feed");
+        if (!list.length) {
+          con.innerHTML = `<div style="text-align:center; padding: 100px; color:var(--text-tertiary);"><svg class="anim-icon" style="width:48px;height:48px;opacity:0.3;margin-bottom:16px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><br>No intelligence found for selected timeframe.</div>`;
           return;
         }
 
-        container.innerHTML = meetings
+        con.innerHTML = list
           .map((m) => {
             const date = new Date(m.created_at);
-            const timeStr = date.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            const dateStr = date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            });
-            const duration = m.duration
-              ? `${Math.floor(m.duration / 60)}m ${m.duration % 60}s`
-              : "N/A";
-            const topic = extractTopic(m.summary || m.name);
+            const info = parse(m);
+
+            // Meta Calculations
+            const trans = m.elevenlabs_transcript || m.client_transcript || "";
+            const wc =
+              trans.trim().length > 0 ? trans.trim().split(/\s+/).length : 0;
+            const min = wc > 0 ? Math.ceil(wc / 200) : 0;
+            const metaText =
+              wc > 0 ? ` &bull; ${wc} words &bull; ${min} min read` : "";
+
+            // Capitalization
+            let title = m.name || "Untitled Session";
+            if (title.length > 0)
+              title = title.charAt(0).toUpperCase() + title.slice(1);
 
             return `
-            <div class="meeting-entry">
-              <div class="meeting-topic">${topic}</div>
-              <h2 class="meeting-title">${
-                m.name || "Untitled Intelligence"
-              }</h2>
-              <div class="meeting-meta-row">
-                <div class="meta-tag"><i class="fas fa-calendar"></i> ${dateStr}</div>
-                <div class="meta-tag"><i class="fas fa-clock"></i> ${timeStr}</div>
-                <div class="meta-tag"><i class="fas fa-stopwatch"></i> ${duration}</div>
-                <div class="meta-tag"><i class="fas fa-quote-left"></i> ${
-                  m.transcription_words || 0
-                } words</div>
-              </div>
-              <div class="meeting-actions">
-                ${
-                  showingDeleted
-                    ? `
-                  <button class="action-btn restore-btn" onclick="restoreMeeting('${m.id}')"><i class="fas fa-rotate-left"></i> Restore</button>
-                  <button class="action-btn delete-btn" onclick="forceDeleteMeeting('${m.id}')"><i class="fas fa-trash"></i> Force Delete</button>
-                `
-                    : `
-                  <div class="action-btn" onclick="loadSecureAudio('${m.id}')" id="audio-btn-${m.id}"><i class="fas fa-play"></i> Decrypt & Play Secure Stream</div>
-                  <button class="action-btn" onclick="downloadAudio('${m.id}')"><i class="fas fa-download"></i> Download WebM</button>
-                  <button class="action-btn delete-btn" onclick="deleteMeeting('${m.id}')"><i class="fas fa-trash-alt"></i> Archive</button>
-                `
-                }
-              </div>
-              <div class="audio-player" id="audio-container-${
-                m.id
-              }" style="display: none;"></div>
-              <div class="intelligence-grid">
-                ${renderIntelSection(
-                  "AI Summary",
-                  "sparkles",
-                  m.summary,
-                  `summary-${m.id}`,
-                  true
-                )}
-                ${renderIntelSection(
-                  "Transcription Matrix",
-                  "wave-square",
-                  m.elevenlabs_transcript,
-                  `transcript-${m.id}`,
-                  false
-                )}
-                ${renderIntelSection(
-                  "Meeting Captions",
-                  "closed-captioning",
-                  m.client_transcript,
-                  `captions-${m.id}`,
-                  false
-                )}
-              </div>
-            </div>
-          `;
+                <div class="meeting-card" id="c-${m.id}">
+                    <div class="card-header" onclick="toggle('${m.id}')">
+                        <div class="header-meta">
+                            <div class="date-badge">
+                                <span style="background:var(--accent); width:6px; height:6px; border-radius:50%"></span>
+                                ${date.toLocaleDateString("en-US", {
+                                  month: "long",
+                                  day: "numeric",
+                                })} ${metaText}
+                            </div>
+                            <div class="expand-circle">
+                                <svg class="anim-icon" style="width:20px" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+                            </div>
+                        </div>
+                        <div class="topic-headline">${title}</div>
+                        <div class="topic-preview">${info.preview}</div>
+                    </div>
+                    
+                    <div class="card-content">
+                        ${transformMarkdown(m.summary)}
+                        
+                        <div class="transcript-module" id="tm-${m.id}">
+                            <div class="transcript-head" onclick="toggleT(event, '${
+                              m.id
+                            }')">
+                                <span>Voice Transcript</span>
+                                <svg class="anim-icon" style="width:16px; transition:transform 0.3s" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+                            </div>
+                            <div class="transcript-body">
+                                ${(
+                                  m.elevenlabs_transcript ||
+                                  m.client_transcript ||
+                                  "Audio transcript processed but returned empty."
+                                ).replace(/\n/g, "<br>")}
+                            </div>
+                        </div>
+                        
+                        <div class="action-bar">
+                           <button class="btn" onclick="play('${m.id}')">
+                               <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                               Play Audio
+                           </button>
+                           
+                           <button class="btn btn-green" onclick="dl('${
+                             m.id
+                           }')">
+                               <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                               Download
+                           </button>
+                           
+                           ${
+                             isTrash
+                               ? `<button class="btn btn-primary" onclick="rest('${m.id}')">
+                                    <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 
+                                    Restore
+                                </button>`
+                               : `<button class="btn btn-red" onclick="arch('${m.id}')">
+                                    <svg class="anim-icon" style="width:18px" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    Archive
+                                </button>`
+                           }
+                        </div>
+                        <div id="p-${m.id}" style="margin-top:20px"></div>
+                    </div>
+                </div>`;
           })
           .join("");
       }
 
-      function renderIntelSection(title, icon, content, id, expanded) {
-        if (!content) return "";
-        const formattedContent = id.includes("summary")
-          ? formatNotionContent(content)
-          : content.replace(/\n/g, "<br>");
-        return `
-          <div class="intel-section">
-            <div class="intel-header" onclick="toggleSection('${id}')">
-              <div class="intel-title"><i class="fas fa-${icon}"></i><h3>${title}</h3></div>
-              <i class="fas fa-chevron-down expand-toggle ${
-                expanded ? "expanded" : ""
-              }" id="${id}-toggle"></i>
-            </div>
-            <div class="intel-content ${
-              expanded ? "" : "collapsed"
-            }" id="${id}">${formattedContent}</div>
-          </div>
-        `;
-      }
+      // Fix parsing for inline bullets and numbered lists
+      function transformMarkdown(md) {
+        if (!md || md == "[]") return "";
 
-      function toggleSection(id) {
-        const content = document.getElementById(id);
-        const toggle = document.getElementById(id + "-toggle");
-        content.classList.toggle("collapsed");
-        toggle.classList.toggle("expanded");
-      }
+        // Fix blobs: Force breaks before bullet chars if not at start of line
+        let clean = md
+          .replace(/---/g, "")
+          .replace(/([^\n>])\s*•/g, "$1\n•")
+          .replace(/([^\n>])\s*\[/g, "$1\n[")
+          .replace(/([^\n>])\s*(\d+\.)/g, "$1\n$2");
 
-      async function loadSecureAudio(id) {
-        const btn = document.getElementById(`audio-btn-${id}`);
-        const container = document.getElementById(`audio-container-${id}`);
-        btn.innerHTML =
-          '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
-        try {
-          const res = await fetch(`${API_BASE}/audio/${id}`, {
-            headers: AUTH_HEADER,
-          });
-          if (!res.ok) throw new Error("Access Denied");
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          container.innerHTML = `<audio controls src="${url}" autoplay></audio>`;
-          container.style.display = "flex";
-          btn.innerHTML = '<i class="fas fa-check"></i> Stream Decrypted';
-        } catch (e) {
-          btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Auth Fail';
-          alert("Auth Fail: " + e.message);
+        // Wrap sections with New Structure (No padding left)
+        let html = clean
+          .replace(/#\s*(?:📝)?\s*Meeting Summary/gi, "")
+          .replace(
+            /##\s*(?:🎯)?\s*Key Discussion Points/gi,
+            `</div><div class="summary-block"><div class="block-header-row"><div class="block-icon">${ICONS.target}</div><div class="block-title">Key Points</div></div><div class="readable-text">`
+          )
+          .replace(
+            /##\s*(?:✅)?\s*Decisions Made/gi,
+            `</div><div class="summary-block"><div class="block-header-row"><div class="block-icon">${ICONS.check}</div><div class="block-title">Decisions</div></div><div class="readable-text">`
+          )
+          .replace(
+            /##\s*(?:📌)?\s*Action Items/gi,
+            `</div><div class="action-block summary-block"><div class="block-header-row"><div class="block-icon">${ICONS.pin}</div><div class="block-title">Actions</div></div><div class="readable-text">`
+          )
+          .replace(
+            /##\s*(?:🔄)?\s*Next Steps/gi,
+            `</div><div class="summary-block"><div class="block-header-row"><div class="block-icon">${ICONS.refresh}</div><div class="block-title">Next Steps</div></div><div class="readable-text">`
+          );
+
+        if (!html.startsWith("</div>")) {
+          html =
+            `<div class="summary-block"><div class="block-header-row"><div class="block-icon">${ICONS.summary}</div><div class="block-title">Executive Summary</div></div><div class="readable-text">` +
+            html;
         }
+        html += "</div></div>";
+
+        // Format Content
+        html = html
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(
+            /^\s*-\s+\[ \]\s+(.*)/gm,
+            '<li><div class="checkbox"></div><div>$1</div></li>'
+          )
+          .replace(
+            /^\s*-\s+\[x\]\s+(.*)/gm,
+            '<li><div class="checkbox" style="background:var(--text-secondary)"></div><div>$1</div></li>'
+          )
+          .replace(
+            /^\s*[-*•]\s+(.*)/gm,
+            '<li><div class="bullet"></div><div>$1</div></li>'
+          )
+          .replace(
+            /^\s*(\d+\.)\s+(.*)/gm,
+            '<li><div class="num-marker">$1</div><div>$2</div></li>'
+          )
+          .replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>")
+          .replace(/<\/ul>\s*<ul>/g, "")
+          .replace(
+            /<div class="summary-block">.*?<div class="readable-text">\s*<\/div><\/div>/g,
+            ""
+          );
+
+        return html;
       }
 
-      async function downloadAudio(id) {
+      function parse(m) {
+        let t = m.summary || "";
+        let c = t.replace(/[#*`]/g, "").trim();
+        let p = "Click to view details.";
+        const mat = c.match(/Meeting Topic:\s*(.*)/i);
+        if (mat) p = mat[1];
+        return { preview: p };
+      }
+
+      function toggle(id) {
+        document.querySelectorAll(".meeting-card.active").forEach((c) => {
+          if (c.id !== "c-" + id) c.classList.remove("active");
+        });
+        document.getElementById("c-" + id).classList.toggle("active");
+      }
+      function toggleT(e, id) {
+        e.stopPropagation();
+        document.getElementById("tm-" + id).classList.toggle("open");
+      }
+
+      async function play(id) {
+        const b = document.getElementById("p-" + id);
+        if (b.innerHTML) return;
         try {
-          const res = await fetch(`${API_BASE}/audio/${id}`, {
-            headers: AUTH_HEADER,
+          // Get key from session
+          const key = sessionStorage.getItem("apiKey") || "";
+          const r = await fetch(`${API}/audio/${id}`, {
+            headers: { "x-api-key": key },
           });
-          if (!res.ok) throw new Error("Access Denied");
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `MeetSync_Audio_${id}.webm`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        } catch (e) {
-          alert("Download Fail: " + e.message);
-        }
+          const d = await r.json();
+          if (d.url)
+            b.innerHTML = `<audio controls autoplay src="${d.url}" style="width:100%"></audio>`;
+        } catch (e) {}
       }
 
-      async function deleteMeeting(id) {
-        if (!confirm("Archive this segment?")) return;
-        const res = await fetch(`${API_BASE}/meetings/${id}`, {
-          method: "DELETE",
-          headers: JSON_HEADERS,
-        });
-        if (res.ok) loadMeetings();
-      }
-
-      async function restoreMeeting(id) {
-        const res = await fetch(`${API_BASE}/meetings/${id}/restore`, {
-          method: "POST",
-          headers: JSON_HEADERS,
-        });
-        if (res.ok) loadMeetings();
-      }
-
-      async function forceDeleteMeeting(id) {
-        // Show strong warning dialog
-        const confirmed = confirm(
-          "⚠️ PERMANENT DELETE WARNING ⚠️\n\n" +
-          "This will PERMANENTLY delete this recording and summary.\n" +
-          "This action CANNOT be undone.\n\n" +
-          "Are you absolutely sure you want to continue?"
-        );
-
-        if (!confirmed) return;
-
-        // Double confirmation for safety
-        const doubleCheck = confirm(
-          "FINAL CONFIRMATION\n\n" +
-          "Click OK to permanently delete this recording.\n" +
-          "Click Cancel to keep it."
-        );
-
-        if (!doubleCheck) return;
-
-        try {
-          const res = await fetch(`${API_BASE}/meetings/${id}/force`, {
+      async function arch(id) {
+        const key = sessionStorage.getItem("apiKey") || "";
+        if (confirm("Archive?")) {
+          await fetch(`${API}/meetings/${id}`, {
             method: "DELETE",
-            headers: JSON_HEADERS,
+            headers: { "x-api-key": key },
           });
-
-          if (res.ok) {
-            alert("✅ Recording permanently deleted");
-            loadMeetings();
-          } else {
-            const error = await res.json();
-            alert("❌ Error: " + (error.error || "Force delete failed"));
-          }
-        } catch (e) {
-          alert("❌ Error: " + e.message);
+          load();
+        }
+      }
+      async function rest(id) {
+        const key = sessionStorage.getItem("apiKey") || "";
+        await fetch(`${API}/meetings/${id}/restore`, {
+          method: "POST",
+          headers: { "x-api-key": key },
+        });
+        load();
+      }
+      async function dl(id) {
+        const key = sessionStorage.getItem("apiKey") || "";
+        const r = await fetch(`${API}/audio/${id}`, {
+          headers: { "x-api-key": key },
+        });
+        const d = await r.json();
+        if (d.url) {
+          const a = document.createElement("a");
+          a.href = d.url;
+          a.download = `celiyo_${id}.webm`;
+          a.click();
         }
       }
 
-      function formatNotionContent(text) {
-        if (!text) return "";
-        return text
-          .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-          .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-          .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-          .replace(/`(.+?)`/g, "<code>$1</code>")
-          .replace(/> (.+)$/gm, "<blockquote>$1</blockquote>")
-          .replace(/\n\n/g, "<br><br>")
-          .replace(/\n/g, " ");
-      }
-
-      function extractTopic(text) {
-        if (!text) return "GENERAL INTELLIGENCE";
-        const line = text.split("\n")[0].replace(/[#*]/g, "").trim();
-        return line.slice(0, 30).toUpperCase() || "TOPIC UNKNOWN";
-      }
-
-      function showError(msg) {
-        document.getElementById(
-          "meetings-list"
-        ).innerHTML = `<div class="status-hero"><i class="fas fa-triangle-exclamation"></i><h3>Core Pulse Lost</h3><p>${msg}</p></div>`;
-      }
-
-      function logout() {
-        if (confirm('Are you sure you want to logout?')) {
-          sessionStorage.removeItem('adminAuthenticated');
-          location.reload();
-        }
-      }
-
-      // Check authentication before loading meetings
-      if (checkAuthentication()) {
-        loadMeetings();
-      }
+      load();
     </script>
   </body>
 </html>

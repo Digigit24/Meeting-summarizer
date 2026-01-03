@@ -6,7 +6,7 @@ let groq = null;
 function getGroqClient() {
   if (!groq) {
     groq = new Groq({
-      apiKey: process.env.GROQ_API_KEY
+      apiKey: process.env.GROQ_API_KEY,
     });
   }
   return groq;
@@ -24,7 +24,9 @@ const MAX_CHUNK_TOKENS = 6000; // Increased for longer meetings
 export async function summarizeMeeting(transcript, segments = []) {
   try {
     console.log("[Summarization] Starting meeting summarization with Groq...");
-    console.log(`[Summarization] Transcript length: ${transcript.length} characters`);
+    console.log(
+      `[Summarization] Transcript length: ${transcript.length} characters`
+    );
 
     // Step 1: Tokenize and chunk the transcript
     const chunks = chunkTranscriptByTokens(transcript, MAX_CHUNK_TOKENS);
@@ -41,8 +43,14 @@ export async function summarizeMeeting(transcript, segments = []) {
     // Step 2: Summarize each chunk
     const chunkSummaries = [];
     for (let i = 0; i < chunks.length; i++) {
-      console.log(`[Summarization] Processing chunk ${i + 1}/${chunks.length}...`);
-      const chunkSummary = await summarizeChunk(chunks[i], i + 1, chunks.length);
+      console.log(
+        `[Summarization] Processing chunk ${i + 1}/${chunks.length}...`
+      );
+      const chunkSummary = await summarizeChunk(
+        chunks[i],
+        i + 1,
+        chunks.length
+      );
       chunkSummaries.push(chunkSummary);
     }
 
@@ -70,7 +78,9 @@ export async function summarizeMeeting(transcript, segments = []) {
  * Chunks transcript by token count to stay under model limits
  */
 function chunkTranscriptByTokens(text, maxTokens) {
-  console.log(`[Tokenization] Starting tokenization with max ${maxTokens} tokens per chunk`);
+  console.log(
+    `[Tokenization] Starting tokenization with max ${maxTokens} tokens per chunk`
+  );
 
   const encoder = encoding_for_model("gpt-3.5-turbo");
   const lines = text.split("\n");
@@ -90,7 +100,9 @@ function chunkTranscriptByTokens(text, maxTokens) {
       // Save current chunk and start new one
       const chunkText = currentChunk.join("\n");
       chunks.push(chunkText);
-      console.log(`[Tokenization] Created chunk ${chunks.length}: ${currentTokens} tokens, ${currentChunk.length} lines`);
+      console.log(
+        `[Tokenization] Created chunk ${chunks.length}: ${currentTokens} tokens, ${currentChunk.length} lines`
+      );
 
       currentChunk = [line];
       currentTokens = lineTokenCount;
@@ -104,7 +116,9 @@ function chunkTranscriptByTokens(text, maxTokens) {
   if (currentChunk.length > 0) {
     const chunkText = currentChunk.join("\n");
     chunks.push(chunkText);
-    console.log(`[Tokenization] Created final chunk ${chunks.length}: ${currentTokens} tokens, ${currentChunk.length} lines`);
+    console.log(
+      `[Tokenization] Created final chunk ${chunks.length}: ${currentTokens} tokens, ${currentChunk.length} lines`
+    );
   }
 
   encoder.free();
@@ -126,7 +140,7 @@ async function summarizeChunk(chunkText, chunkIndex, totalChunks) {
         messages: [
           {
             role: "system",
-            content: `You are an expert meeting summarizer. Extract key information in a clear, scannable format. Support multilingual input (English, Hinglish, Marathi) but ALWAYS output in English only.`
+            content: `You are an expert meeting summarizer. Extract key information in a clear, scannable format. Support multilingual input (English, Hinglish, Marathi) but ALWAYS output in English only.`,
           },
           {
             role: "user",
@@ -155,8 +169,8 @@ Output format:
 • [Decision in English] (by [Name])
 
 **Action Items:**
-• [Task in English] - [Assignee]`
-          }
+• [Task in English] - [Assignee]`,
+          },
         ],
         model: GROQ_MODEL,
         temperature: 0.3,
@@ -164,17 +178,27 @@ Output format:
         top_p: 0.9,
       });
 
-      return chatCompletion.choices[0]?.message?.content || `[Error: No response for chunk ${chunkIndex}]`;
+      return (
+        chatCompletion.choices[0]?.message?.content ||
+        `[Error: No response for chunk ${chunkIndex}]`
+      );
     } catch (error) {
       lastError = error;
-      console.error(`[Summarization] Error summarizing chunk ${chunkIndex} (attempt ${attempt}/${maxRetries}):`, error.message);
+      console.error(
+        `[Summarization] Error summarizing chunk ${chunkIndex} (attempt ${attempt}/${maxRetries}):`,
+        error.message
+      );
 
       // If rate limited, wait before retrying
-      if (error.message.includes('rate') || error.message.includes('429')) {
+      if (error.message.includes("rate") || error.message.includes("429")) {
         if (attempt < maxRetries) {
           const waitTime = Math.min(5000 * attempt, 30000);
-          console.log(`[Summarization] Rate limited, waiting ${waitTime/1000}s before retry...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+          console.log(
+            `[Summarization] Rate limited, waiting ${
+              waitTime / 1000
+            }s before retry...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
       } else {
         break;
@@ -182,8 +206,12 @@ Output format:
     }
   }
 
-  console.error(`[Summarization] Failed to summarize chunk ${chunkIndex} after ${maxRetries} attempts`);
-  return `[Unable to summarize this segment - ${lastError?.message || 'Unknown error'}]`;
+  console.error(
+    `[Summarization] Failed to summarize chunk ${chunkIndex} after ${maxRetries} attempts`
+  );
+  return `[Unable to summarize this segment - ${
+    lastError?.message || "Unknown error"
+  }]`;
 }
 
 /**
@@ -201,7 +229,7 @@ async function createFinalSummary(chunkSummaries) {
       messages: [
         {
           role: "system",
-          content: `You create professional, scannable meeting summaries in Notion style. Support multilingual input (English, Hinglish, Marathi) but ALWAYS output in English. Use simple, clear language.`
+          content: `You create professional, scannable meeting summaries in Notion style. Support multilingual input (English, Hinglish, Marathi) but ALWAYS output in English. Use simple, clear language.`,
         },
         {
           role: "user",
@@ -222,6 +250,7 @@ FORMATTING RULES:
 
 CONTENT RULES:
 - Meeting length: ${numChunks} segments - use up to ${maxPoints} points total
+- CRITICAL: For hours-long meetings, do NOT over-summarize. Key details are important.
 - Longer meetings = more points (don't limit to 10 if meeting is long)
 - Focus on outcomes, decisions, and actions
 - Skip small talk and repetition
@@ -266,18 +295,23 @@ OUTPUT FORMAT:
 SEGMENT SUMMARIES:
 ${combinedSummaries}
 
-Remember: Simple English, scannable format, up to ${maxPoints} points for this ${numChunks}-segment meeting.`
-        }
+Remember: Simple English, scannable format, up to ${maxPoints} points for this ${numChunks}-segment meeting.`,
+        },
       ],
       model: GROQ_MODEL,
       temperature: 0.2,
-      max_completion_tokens: 3000, // Increased for longer meetings
+      max_completion_tokens: 4096, // Increased for longer meetings
       top_p: 0.9,
     });
 
-    return chatCompletion.choices[0]?.message?.content || chunkSummaries.join("\n\n");
+    return (
+      chatCompletion.choices[0]?.message?.content || chunkSummaries.join("\n\n")
+    );
   } catch (error) {
-    console.error("[Summarization] Error creating final summary:", error.message);
+    console.error(
+      "[Summarization] Error creating final summary:",
+      error.message
+    );
     // Fallback: concatenate chunk summaries with proper formatting
     return `# 📝 Meeting Summary\n\n${chunkSummaries.join("\n\n---\n\n")}`;
   }
@@ -294,7 +328,7 @@ async function extractActionItems(chunkSummaries) {
       messages: [
         {
           role: "system",
-          content: `Extract action items from multilingual meeting summaries. Support English, Hinglish, Marathi input but ALWAYS output in English using simple language.`
+          content: `Extract action items from multilingual meeting summaries. Support English, Hinglish, Marathi input but ALWAYS output in English using simple language.`,
         },
         {
           role: "user",
@@ -308,8 +342,8 @@ RULES:
 Return only the bullet list, no extra text.
 
 Summaries:
-${combinedSummaries}`
-        }
+${combinedSummaries}`,
+        },
       ],
       model: GROQ_MODEL,
       temperature: 0.2,
@@ -317,15 +351,20 @@ ${combinedSummaries}`
       top_p: 1,
     });
 
-    const actionItemsText = chatCompletion.choices[0]?.message?.content || '';
+    const actionItemsText = chatCompletion.choices[0]?.message?.content || "";
 
     // Parse into array
     return actionItemsText
       .split("\n")
-      .filter((line) => line.trim().startsWith("-") || line.trim().startsWith("•"))
+      .filter(
+        (line) => line.trim().startsWith("-") || line.trim().startsWith("•")
+      )
       .map((line) => line.trim().replace(/^[-•]\s*/, "")); // Remove bullet prefix
   } catch (error) {
-    console.error("[Summarization] Error extracting action items:", error.message);
+    console.error(
+      "[Summarization] Error extracting action items:",
+      error.message
+    );
     return [];
   }
 }
@@ -340,7 +379,11 @@ function extractKeyPoints(summary, numChunks = 1) {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.startsWith("•")) {
+    if (
+      trimmed.startsWith("-") ||
+      trimmed.startsWith("*") ||
+      trimmed.startsWith("•")
+    ) {
       const point = trimmed.replace(/^[-*•]\s*/, "").trim();
       if (point.length > 0) {
         keyPoints.push(point);

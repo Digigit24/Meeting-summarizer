@@ -71,6 +71,8 @@ async function startRecording(streamId, meetingId) {
   if (tabStream.getAudioTracks().length > 0) {
     const tabSource = audioContext.createMediaStreamSource(tabStream);
     tabSource.connect(destination);
+    // CRITICAL FIX: Connect to speakers so user can hear the meeting!
+    tabSource.connect(audioContext.destination);
   }
 
   // Connect Mic Audio
