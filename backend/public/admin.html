@@ -749,6 +749,7 @@
         const p = document.getElementById("p").value;
 
         try {
+          // Login via POST (Cookies set automatically)
           const res = await fetch(`${API}/admin/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -759,7 +760,7 @@
 
           if (d.success) {
             sessionStorage.setItem("auth", "1");
-            sessionStorage.setItem("apiKey", d.apiKey); // Store key
+            // We rely on HTTP cookie now, no need to store apiKey
             location.reload();
           } else {
             alert("Invalid Credentials");
@@ -772,7 +773,6 @@
 
       function logout() {
         sessionStorage.removeItem("auth");
-        sessionStorage.removeItem("apiKey");
         location.reload();
       }
 
@@ -781,10 +781,11 @@
 
       async function load() {
         try {
-          const key = sessionStorage.getItem("apiKey") || "";
-          const r = await fetch(`${API}/meetings`, {
-            headers: { "x-api-key": key },
-          });
+          // No headers needed, cookies handle auth
+          const r = await fetch(`${API}/meetings`);
+
+          if (r.status === 401) return logout();
+
           const d = await r.json();
           data = Array.isArray(d) ? d : d.meetings || [];
           refresh();
@@ -1011,11 +1012,9 @@
         const b = document.getElementById("p-" + id);
         if (b.innerHTML) return;
         try {
-          // Get key from session
-          const key = sessionStorage.getItem("apiKey") || "";
-          const r = await fetch(`${API}/audio/${id}`, {
-            headers: { "x-api-key": key },
-          });
+          // No headers needed
+          const r = await fetch(`${API}/audio/${id}`);
+          if (r.status === 401) return logout();
           const d = await r.json();
           if (d.url)
             b.innerHTML = `<audio controls autoplay src="${d.url}" style="width:100%"></audio>`;
@@ -1023,28 +1022,22 @@
       }
 
       async function arch(id) {
-        const key = sessionStorage.getItem("apiKey") || "";
         if (confirm("Archive?")) {
-          await fetch(`${API}/meetings/${id}`, {
-            method: "DELETE",
-            headers: { "x-api-key": key },
-          });
+          const r = await fetch(`${API}/meetings/${id}`, { method: "DELETE" });
+          if (r.status === 401) return logout();
           load();
         }
       }
       async function rest(id) {
-        const key = sessionStorage.getItem("apiKey") || "";
-        await fetch(`${API}/meetings/${id}/restore`, {
+        const r = await fetch(`${API}/meetings/${id}/restore`, {
           method: "POST",
-          headers: { "x-api-key": key },
         });
+        if (r.status === 401) return logout();
         load();
       }
       async function dl(id) {
-        const key = sessionStorage.getItem("apiKey") || "";
-        const r = await fetch(`${API}/audio/${id}`, {
-          headers: { "x-api-key": key },
-        });
+        const r = await fetch(`${API}/audio/${id}`);
+        if (r.status === 401) return logout();
         const d = await r.json();
         if (d.url) {
           const a = document.createElement("a");
