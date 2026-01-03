@@ -8,6 +8,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import { execSync } from "child_process";
 
 dotenv.config();
 
@@ -48,10 +49,10 @@ async function ensureAdmin() {
     return;
   }
 
-  try {
-    const email = process.env.ADMIN_EMAIL;
-    const passwordPlain = process.env.ADMIN_PASSWORD;
+  const email = process.env.ADMIN_EMAIL || "admin@celiyo.com";
+  const passwordPlain = process.env.ADMIN_PASSWORD || "Letmegoin@0007";
 
+  const createAdmin = async () => {
     // Check if admin exists
     const admin = await prisma.admin.findUnique({ where: { email } });
     if (!admin) {
@@ -62,11 +63,25 @@ async function ensureAdmin() {
     } else {
       console.log("[Startup] Admin User exists.");
     }
+  };
+
+  try {
+    await createAdmin();
   } catch (e) {
-    console.error(
-      "[Startup] Failed to check/seed admin. DB might be missing 'Admin' table?",
-      e.message
-    );
+    // Handle Missing Table Error (P2021)
+    if (e.code === "P2021") {
+      console.warn("⚠️ Database tables missing. Attempting auto-migration...");
+      try {
+        // Run schema push
+        execSync("npx prisma db push", { stdio: "inherit" });
+        console.log("✅ Auto-migration successful. Retrying seed...");
+        await createAdmin();
+      } catch (migErr) {
+        console.error("❌ Auto-migration failed:", migErr.message);
+      }
+    } else {
+      console.error("[Startup] Failed to check/seed admin:", e.message);
+    }
   }
 }
 
