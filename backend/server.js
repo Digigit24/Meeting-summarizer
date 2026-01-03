@@ -49,8 +49,8 @@ async function ensureAdmin() {
   }
 
   try {
-    const email = process.env.ADMIN_EMAIL || "admin@celiyo.com";
-    const passwordPlain = process.env.ADMIN_PASSWORD || "Letmegoin@0007";
+    const email = process.env.ADMIN_EMAIL;
+    const passwordPlain = process.env.ADMIN_PASSWORD;
 
     // Check if admin exists
     const admin = await prisma.admin.findUnique({ where: { email } });
